@@ -1,0 +1,186 @@
+{
+  "note": "Simulated coordinates; collected OSM POI; template AI fallback",
+  "examples": [
+    {
+      "scenario": "coffee",
+      "simulated_request": {
+        "latitude": 51.09,
+        "longitude": 71.42,
+        "query": "Хочу кофе поблизости",
+        "duration_minutes": 60,
+        "transport": "walking",
+        "categories": [
+          "cafe"
+        ]
+      },
+      "response": {
+        "recommendations": [
+          {
+            "id": "osm_node_12990081501",
+            "name": "Discovery Coffee",
+            "latitude": 51.0906396,
+            "longitude": 71.4260369,
+            "category": "cafe",
+            "description": null,
+            "reason": "Категория: кафе. Примерно 428 м по прямой; дорога к месту и посещение — около 28 мин. Соответствие остальным пожеланиям не подтверждено; часы и условия нужно уточнить.",
+            "distance_meters": 427.57956693429014,
+            "estimated_duration_minutes": 28,
+            "suggested_action": "Рассмотреть кафе для короткого отдыха; перед визитом уточнить часы и условия.",
+            "opening_hours": null,
+            "source": "OpenStreetMap"
+          },
+          {
+            "id": "osm_node_13173517356",
+            "name": "Gasteria",
+            "latitude": 51.0889451,
+            "longitude": 71.4093464,
+            "category": "cafe",
+            "description": null,
+            "reason": "Категория: кафе. Примерно 753 м по прямой; дорога к месту и посещение — около 34 мин. Соответствие остальным пожеланиям не подтверждено; часы и условия нужно уточнить.",
+            "distance_meters": 753.2610927969778,
+            "estimated_duration_minutes": 34,
+            "suggested_action": "Рассмотреть кафе для короткого отдыха; перед визитом уточнить часы и условия.",
+            "opening_hours": "Mo-Th 10:00-23:00; Fr-Su 10:00-00:00",
+            "source": "OpenStreetMap"
+          },
+          {
+            "id": "osm_node_9047331879",
+            "name": "Starbucks",
+            "latitude": 51.0890092,
+            "longitude": 71.4089158,
+            "category": "cafe",
+            "description": null,
+            "reason": "Категория: кафе. Примерно 782 м по прямой; дорога к месту и посещение — около 34 мин. Соответствие остальным пожеланиям не подтверждено; часы и условия нужно уточнить.",
+            "distance_meters": 781.9457437594187,
+            "estimated_duration_minutes": 34,
+            "suggested_action": "Рассмотреть кафе для короткого отдыха; перед визитом уточнить часы и условия.",
+            "opening_hours": "Mo-Su 08:00-22:00",
+            "source": "OpenStreetMap"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "walk",
+      "simulated_request": {
+        "latitude": 51.09,
+        "longitude": 71.42,
+        "query": "Хочу короткую прогулку",
+        "duration_minutes": 60,
+        "transport": "walking",
+        "categories": [
+          "park",
+          "attraction",
+          "viewpoint"
+        ]
+      },
+      "response": {
+        "recommendations": [
+          {
+            "id": "osm_way_1460763574",
+            "name": "Тәуелсіздіктің 25 жылдығы",
+            "latitude": 51.0934524,
+            "longitude": 71.4175645,
+            "category": "attraction",
+            "description": null,
+            "reason": "Категория: достопримечательность. Примерно 420 м по прямой; дорога к месту и посещение — около 28 мин. Соответствие остальным пожеланиям не подтверждено; часы и условия нужно уточнить.",
+            "distance_meters": 419.88445606651896,
+            "estimated_duration_minutes": 28,
+            "suggested_action": "Рассмотреть осмотр достопримечательности; заранее уточнить условия посещения.",
+            "opening_hours": null,
+            "source": "OpenStreetMap"
+          },
+          {
+            "id": "osm_way_1456208624",
+            "name": "Бейбітшілік пен Келісім аллеясы",
+            "latitude": 51.0938123,
+            "longitude": 71.4169498,
+            "category": "park",
+            "description": null,
+            "reason": "Категория: парк. Примерно 474 м по прямой; дорога к месту и посещение — около 29 мин. Соответствие остальным пожеланиям не подтверждено; часы и условия нужно уточнить.",
+            "distance_meters": 474.4229357416337,
+            "estimated_duration_minutes": 29,
+            "suggested_action": "Запланировать короткую прогулку; условия на месте заранее не проверены.",
+            "opening_hours": null,
+            "source": "OpenStreetMap"
+          },
+          {
+            "id": "osm_way_1467797207",
+            "name": "NU Park",
+            "latitude": 51.0872699,
+            "longitude": 71.3994394,
+            "category": "park",
+            "description": null,
+            "reason": "Категория: парк. Примерно 1468 м по прямой; дорога к месту и посещение — около 46 мин. Соответствие остальным пожеланиям не подтверждено; часы и условия нужно уточнить.",
+            "distance_meters": 1467.762441480902,
+            "estimated_duration_minutes": 46,
+            "suggested_action": "Запланировать короткую прогулку; условия на месте заранее не проверены.",
+            "opening_hours": null,
+            "source": "OpenStreetMap"
+          }
+        ]
+      }
+    },
+    {
+      "scenario": "tourist",
+      "simulated_request": {
+        "latitude": 51.09,
+        "longitude": 71.42,
+        "query": "Я турист, хочу посмотреть город",
+        "duration_minutes": 120,
+        "transport": "walking",
+        "categories": [
+          "museum",
+          "attraction",
+          "viewpoint"
+        ]
+      },
+      "response": {
+        "recommendations": [
+          {
+            "id": "osm_way_1460763574",
+            "name": "Тәуелсіздіктің 25 жылдығы",
+            "latitude": 51.0934524,
+            "longitude": 71.4175645,
+            "category": "attraction",
+            "description": null,
+            "reason": "Категория: достопримечательность. Примерно 420 м по прямой; дорога к месту и посещение — около 28 мин. Соответствие остальным пожеланиям не подтверждено; часы и условия нужно уточнить.",
+            "distance_meters": 419.88445606651896,
+            "estimated_duration_minutes": 28,
+            "suggested_action": "Рассмотреть осмотр достопримечательности; заранее уточнить условия посещения.",
+            "opening_hours": null,
+            "source": "OpenStreetMap"
+          },
+          {
+            "id": "osm_way_549307755",
+            "name": "Мәңгілік Ел салтанат қақпасы",
+            "latitude": 51.1043034,
+            "longitude": 71.4300836,
+            "category": "attraction",
+            "description": null,
+            "reason": "Категория: достопримечательность. Примерно 1739 м по прямой; дорога к месту и посещение — около 51 мин. Соответствие остальным пожеланиям не подтверждено; часы и условия нужно уточнить.",
+            "distance_meters": 1739.369871839286,
+            "estimated_duration_minutes": 51,
+            "suggested_action": "Рассмотреть осмотр достопримечательности; заранее уточнить условия посещения.",
+            "opening_hours": null,
+            "source": "OpenStreetMap"
+          },
+          {
+            "id": "osm_way_963855443",
+            "name": "Назарбаев орталығы-2",
+            "latitude": 51.1146527,
+            "longitude": 71.4421493,
+            "category": "museum",
+            "description": null,
+            "reason": "Категория: музей. Примерно 3147 м по прямой; дорога к месту и посещение — около 100 мин. Соответствие остальным пожеланиям не подтверждено; часы и условия нужно уточнить.",
+            "distance_meters": 3147.419520188372,
+            "estimated_duration_minutes": 100,
+            "suggested_action": "Рассмотреть посещение музея; заранее уточнить часы, билеты и условия.",
+            "opening_hours": null,
+            "source": "OpenStreetMap"
+          }
+        ]
+      }
+    }
+  ]
+}
