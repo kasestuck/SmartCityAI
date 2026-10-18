@@ -11,20 +11,10 @@
     document.getElementById("sg-mini").append(
       ...places.map((p, i) => R.placeMini(p, { index: i + 1, onSelect: () => {} }))
     );
-    window.SchematicMap.create(document.getElementById("sg-map"), {
-      size: "compact",
-      places: places.map((p) => ({
-        id: p.id,
-        name: p.name,
-        lat: p.latitude,
-        lon: p.longitude,
-        category: p.category,
-        label: R.categoryInfo(p.category).label,
-      })),
-      user: { lat: 51.09, lon: 71.42 },
-      selectedId: places[0].id,
-      ariaLabel: "Пример схематичной карты",
-    });
+    window.GMap.create(document.getElementById("sg-map"), { size: "compact" }).show(
+      { lat: places[0].latitude, lon: places[0].longitude, zoom: 16 },
+      `Google Карта: ${places[0].name}`
+    );
 
     const btn = (cls, text, iconName) =>
       el("button", { class: `btn ${cls} btn--block`, attrs: { type: "button" } }, iconName ? R.icon(iconName, 18) : null, text);

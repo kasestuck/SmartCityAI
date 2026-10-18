@@ -196,6 +196,59 @@
       ],
     },
 
+    // Запрос с особыми потребностями (поле accessibility, предложение к контракту).
+    // Korean House — реальный POI OSM с тегом wheelchair=yes (node 14107301089);
+    // у остальных тега нет, поэтому wheelchair: null и объяснение честно говорит «нет данных».
+    accessible: {
+      recommendations: [
+        {
+          id: "osm_node_14107301089",
+          name: "Korean House",
+          latitude: 51.0883714,
+          longitude: 71.4094571,
+          category: "restaurant",
+          description: null,
+          reason: "По данным OpenStreetMap вход доступен для коляски (wheelchair=yes). Ресторан в 760 м — можно спокойно пообедать.",
+          distance_meters: 758.4,
+          estimated_duration_minutes: 59,
+          suggested_action: "Перед визитом уточнить по телефону, есть ли доступный туалет и свободные столики.",
+          opening_hours: "10:00-24:00",
+          source: "OpenStreetMap",
+          wheelchair: "yes",
+        },
+        {
+          id: "osm_way_1456208624",
+          name: "Бейбітшілік пен Келісім аллеясы",
+          latitude: 51.0938123,
+          longitude: 71.4169498,
+          category: "park",
+          description: null,
+          reason: "Открытое пространство рядом со стартом, но данных о доступности в OpenStreetMap нет — уверенность низкая.",
+          distance_meters: 474.4229357416337,
+          estimated_duration_minutes: 29,
+          suggested_action: "Проверить покрытие и бордюры на месте; если неудобно — выбрать место с подтверждённой доступностью.",
+          opening_hours: null,
+          source: "OpenStreetMap",
+          wheelchair: null,
+        },
+        {
+          id: "osm_way_1460763574",
+          name: "Тәуелсіздіктің 25 жылдығы",
+          latitude: 51.0934524,
+          longitude: 71.4175645,
+          category: "attraction",
+          description: null,
+          reason: "Достопримечательность в 420 м. Данных о доступности для коляски нет — уточните подходы на месте.",
+          distance_meters: 419.88445606651896,
+          estimated_duration_minutes: 28,
+          suggested_action: "Посмотреть монумент со стороны площади, не планируя спуск или подъём по лестницам.",
+          opening_hours: null,
+          source: "OpenStreetMap",
+          wheelchair: null,
+        },
+      ],
+    },
+
     empty: { recommendations: [] },
   };
 
@@ -280,7 +333,12 @@
         });
       default: {
         const payload = JSON.parse(init.body || "{}");
-        const body = RESPONSES[pickResponse(payload)];
+        const needs = Array.isArray(payload.accessibility) ? payload.accessibility : [];
+        let body = needs.includes("wheelchair") ? RESPONSES.accessible : RESPONSES[pickResponse(payload)];
+        // «Трудно ходить далеко»: только места ближе 1 км.
+        if (needs.includes("low_mobility")) {
+          body = { recommendations: body.recommendations.filter((r) => r.distance_meters <= 1000) };
+        }
         // 503 с данными: места есть, объяснения шаблонные.
         return json(scenario === "503" ? 503 : 200, body);
       }

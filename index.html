@@ -10,39 +10,47 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="css/variables.css">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/components.css">
-  <script src="js/config.js" defer></script>
-  <script src="js/mock-data.js" defer></script>
-  <script src="js/api.js" defer></script>
-  <script src="js/render.js" defer></script>
-  <script src="js/map.js" defer></script>
-  <script src="js/main.js" defer></script>
+  <link rel="stylesheet" href="css/variables.css?v=202610181749">
+  <link rel="stylesheet" href="css/base.css?v=202610181749">
+  <link rel="stylesheet" href="css/components.css?v=202610181751">
+  <script src="js/config.js?v=202610181749" defer></script>
+  <script src="js/i18n.js?v=202610181750" defer></script>
+  <script src="js/mock-data.js?v=202610181749" defer></script>
+  <script src="js/api.js?v=202610181749" defer></script>
+  <script src="js/render.js?v=202610181749" defer></script>
+  <script src="js/gmap.js?v=202610181749" defer></script>
+  <script src="js/pickmap.js?v=202610181749" defer></script>
+  <script src="js/widgets.js?v=202610181749" defer></script>
+  <script src="js/main.js?v=202610181749" defer></script>
 </head>
 <body>
-  <a class="skip-link" href="#main">Перейти к содержанию</a>
+  <a class="skip-link" href="#main" data-i18n="skip">Перейти к содержанию</a>
 
   <header class="site-header">
     <div class="container site-header__inner">
-      <a class="logo" href="#/" aria-label="ASTANA GO AI — на главную">
+      <a class="logo" href="#/" aria-label="ASTANA GO AI — на главную" data-i18n-aria-label="logo_aria">
         <span class="logo__mark"><img src="assets/icons/brand-compass.svg" width="20" height="20" alt=""></span>
         <span class="logo__name" aria-hidden="true">ASTANA GO AI</span>
       </a>
-      <nav class="site-nav" aria-label="Основная навигация">
-        <a href="#/" data-nav="home">Главная</a>
-        <a href="#/map" data-nav="map">Карта</a>
-        <a href="#/guide" data-nav="guide">AI-гид</a>
+      <nav class="site-nav" aria-label="Основная навигация" data-i18n-aria-label="nav_aria">
+        <a href="#/" data-nav="home" data-i18n="nav_home">Главная</a>
+        <a href="#/map" data-nav="map" data-i18n="nav_map">Карта</a>
+        <a href="#/guide" data-nav="guide" data-i18n="nav_guide">AI-гид</a>
       </nav>
       <div class="header-meta">
         <span class="health" id="health" data-state="checking" role="status">
           <span class="health__dot" aria-hidden="true"></span>
-          <span class="health__text" id="health-text">Проверяем сервис…</span>
+          <span class="health__text" id="health-text" data-i18n="health_checking">Проверяем сервис…</span>
         </span>
         <span class="city">
           <img src="assets/icons/map-pin-header.svg" width="16" height="16" alt="">
-          Астана
+          <span data-i18n="city">Астана</span>
         </span>
+        <div class="lang-switch" role="group" aria-label="Язык интерфейса" data-i18n-aria-label="lang_aria">
+          <button type="button" data-lang="ru" aria-pressed="true" lang="ru" title="Русский">RU</button>
+          <button type="button" data-lang="kk" aria-pressed="false" lang="kk" title="Қазақша">KZ</button>
+          <button type="button" data-lang="en" aria-pressed="false" lang="en" title="English">EN</button>
+        </div>
       </div>
     </div>
   </header>
@@ -52,125 +60,265 @@
     <div class="view container" data-view="home" id="view-home">
       <section class="hero" aria-labelledby="hero-title">
         <div class="hero__intro">
-          <p class="t-eyebrow">Твой город. Твои открытия.</p>
-          <h1 class="t-display" id="hero-title">Куда отправимся сегодня?</h1>
-          <p class="t-lead">Расскажи, что тебе хочется, а ИИ найдёт идеальное место рядом.</p>
+          <p class="t-eyebrow" data-i18n="hero_eyebrow">Твой город. Твои открытия.</p>
+          <h1 class="t-display" id="hero-title" tabindex="-1" data-i18n="hero_title">Куда отправимся сегодня?</h1>
+          <p class="t-lead" data-i18n="hero_lead">Расскажи, что тебе хочется, а ИИ найдёт идеальное место рядом.</p>
 
-          <form class="search" id="search-form" novalidate aria-describedby="search-hint">
-            <div class="form-alert" id="form-alert" role="alert" tabindex="-1" hidden></div>
-
+          <form class="search" id="home-form" novalidate aria-describedby="home-hint">
             <div class="field">
-              <label class="t-label" for="query">Что тебе хочется?</label>
+              <label class="visually-hidden" for="home-query" data-i18n="query_label">Что тебе хочется?</label>
               <div class="query-box">
                 <img src="assets/icons/sparkles-20.svg" width="20" height="20" alt="">
-                <textarea id="query" name="query" rows="2" maxlength="500" required
-                  placeholder="Хочу погулять час и выпить кофе..."
-                  aria-describedby="query-error query-counter"></textarea>
+                <textarea id="home-query" rows="2" maxlength="500"
+                  placeholder="Хочу погулять час и выпить кофе..." data-i18n-placeholder="query_placeholder" aria-describedby="home-query-error"></textarea>
               </div>
-              <div class="field__foot">
-                <p class="field__error" id="query-error" hidden></p>
-                <span class="field__counter" id="query-counter" aria-live="off">0 / 500</span>
-              </div>
+              <p class="field__error" id="home-query-error" hidden></p>
             </div>
-
-            <fieldset class="field location" id="location-field" aria-describedby="location-hint location-error">
-              <legend class="t-label">Откуда начнём?</legend>
-              <div class="location__current">
-                <img src="assets/icons/locate-fixed.svg" width="18" height="18" alt="">
-                <div class="location__current-text" aria-live="polite">
-                  <span class="location__title" id="location-title">Точка не выбрана</span>
-                  <span class="location__sub" id="location-sub">Выбери один из вариантов ниже</span>
-                </div>
-              </div>
-
-              <div class="location__denied" id="geo-denied" hidden>
-                <img src="assets/icons/map-pin-off.svg" width="24" height="24" alt="">
-                <div>
-                  <strong id="geo-denied-title">Укажи своё местоположение на карте.</strong>
-                  <span id="geo-denied-text">Можно выбрать точку вручную — доступ к геолокации не обязателен.</span>
-                </div>
-              </div>
-
-              <div class="location__actions">
-                <button type="button" class="btn btn--secondary btn--sm" id="geo-btn">
-                  <img src="assets/icons/locate-fixed.svg" width="18" height="18" alt="">
-                  <span class="btn__spinner" aria-hidden="true"></span>
-                  <span>Использовать моё местоположение</span>
-                </button>
-                <button type="button" class="chip" id="pick-btn">Выбрать точку на карте</button>
-                <button type="button" class="chip" id="center-btn">Центр Астаны</button>
-                <button type="button" class="chip" id="manual-btn" aria-expanded="false" aria-controls="manual-coords">Ввести координаты</button>
-              </div>
-
-              <div class="manual" id="manual-coords" hidden>
-                <label>Широта (от −90 до 90)
-                  <input class="input" id="manual-lat" type="text" inputmode="decimal" autocomplete="off" placeholder="51.1283" aria-describedby="manual-error">
-                </label>
-                <label>Долгота (от −180 до 180)
-                  <input class="input" id="manual-lon" type="text" inputmode="decimal" autocomplete="off" placeholder="71.4305" aria-describedby="manual-error">
-                </label>
-                <p class="field__error" id="manual-error" hidden></p>
-                <button type="button" class="btn btn--secondary btn--sm" id="manual-apply">Применить координаты</button>
-              </div>
-
-              <p class="t-caption" id="location-hint">
-                Координаты нужны только для поиска мест рядом: они отправляются на наш сервер вместе с запросом,
-                не сохраняются в браузере и не передаются в аналитику.
-              </p>
-              <p class="field__error" id="location-error" hidden></p>
-            </fieldset>
-
-            <fieldset class="field" id="duration-field">
-              <legend class="t-label">Сколько есть времени?</legend>
-              <div class="chips" id="duration-options"></div>
-            </fieldset>
-
-            <fieldset class="field" id="category-field" aria-describedby="category-hint">
-              <legend class="t-label">Что интересно</legend>
-              <div class="chips" id="category-options"></div>
-              <p class="t-caption" id="category-hint">Можно выбрать несколько. «Все» — без фильтра.</p>
-            </fieldset>
-
-            <div class="transport">
-              <span>Как доберёмся</span>
-              <span class="tag tag--primary">Пешком</span>
-            </div>
-
-            <p class="notice" id="health-warning" role="status" hidden>
-              <img src="assets/icons/wifi-off.svg" width="18" height="18" alt="">
-              <span>Сервер сейчас не отвечает. Форма работает, но поиск может не получиться — попробуй чуть позже.</span>
-            </p>
-
-            <button type="submit" class="btn btn--primary btn--block" id="submit-btn">
-              <span class="btn__spinner" aria-hidden="true"></span>
-              <span class="btn__label" id="submit-label">Найти места ✨</span>
-            </button>
-            <p class="t-caption" id="search-hint">
-              Пара слов о настроении — и город станет ближе. Текст запроса может передаваться внешнему
-              AI-сервису для объяснений, поэтому не пиши в нём личные данные.
-            </p>
+            <button type="submit" class="btn btn--primary btn--block" data-i18n="find">Найти места</button>
+            <p class="t-caption" id="home-hint" data-i18n="home_hint">Пара слов о настроении — и город станет ближе.</p>
           </form>
+
+          <div class="hero__ideas">
+            <h2 class="t-label" id="ideas-title" data-i18n="ideas_title">Быстрые идеи — поиск в одно нажатие</h2>
+            <div class="chips" id="scenario-list" role="group" aria-labelledby="ideas-title"></div>
+          </div>
+
+          <section class="panel weather" id="weather" aria-labelledby="weather-title" aria-busy="true">
+            <div class="panel__head">
+              <h2 class="t-h3" id="weather-title" data-i18n="weather_title">Погода в Астане</h2>
+              <a class="t-caption" href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a>
+            </div>
+            <div data-weather-body><p class="t-small" data-i18n="weather_loading">Загружаем погоду…</p></div>
+          </section>
         </div>
 
-        <div class="hero__ideas">
-          <h2 class="t-label" id="ideas-title">Быстрые идеи — поиск в одно нажатие</h2>
-          <div class="chips" id="scenario-list" role="group" aria-labelledby="ideas-title"></div>
-        </div>
+        <div class="hero__side">
+          <figure class="hero__photo">
+            <img src="assets/img/astana-panorama.jpg" width="1264" height="848"
+              alt="Панорама левого берега Астаны с монументом Байтерек на закате" data-i18n-alt="photo_alt">
+            <figcaption class="hero__caption" data-i18n="photo_caption">Астана · Открой знакомое по-новому</figcaption>
+          </figure>
 
-        <figure class="hero__photo">
-          <img src="assets/img/astana-panorama.jpg" width="1264" height="848"
-            alt="Панорама левого берега Астаны с монументом Байтерек на закате">
-          <figcaption class="hero__caption">Астана · Открой знакомое по-новому</figcaption>
-        </figure>
+
+          <section class="panel news" id="news" aria-labelledby="news-title" aria-busy="true">
+            <div class="panel__head">
+              <h2 class="t-h3" id="news-title" data-i18n="news_title">Новости Астаны</h2>
+              <a class="t-caption" id="news-more" href="#" target="_blank" rel="noopener noreferrer"><span data-i18n="news_all">Все новости</span><span class="visually-hidden" data-i18n="new_tab"> (откроется в новой вкладке)</span></a>
+            </div>
+            <ul class="news__list" data-news-list>
+              <li class="news__item" aria-hidden="true"><div class="skeleton__line skeleton__line--title"></div><div class="skeleton__line skeleton__line--short" style="margin-top: 8px"></div></li>
+              <li class="news__item" aria-hidden="true"><div class="skeleton__line skeleton__line--title"></div><div class="skeleton__line skeleton__line--short" style="margin-top: 8px"></div></li>
+              <li class="news__item" aria-hidden="true"><div class="skeleton__line skeleton__line--title"></div><div class="skeleton__line skeleton__line--short" style="margin-top: 8px"></div></li>
+              <li class="visually-hidden" data-i18n="news_loading">Загружаем новости…</li>
+            </ul>
+            <p class="t-small" data-news-status role="status"></p>
+            <p class="t-caption" data-i18n="news_source">Заголовки собраны сервисом GDELT из казахстанских СМИ.</p>
+          </section>
+        </div>
       </section>
 
-      <!-- Рекомендации -->
-      <section class="results" id="results" aria-labelledby="results-title" hidden>
-        <div class="results__main">
+      <section class="explore" aria-label="Об Астане и о сервисе" data-i18n-aria-label="explore_aria">
+        <div class="explore__map">
+          <div class="section-title">
+            <h2 class="t-h2" data-i18n="explore_title">Исследуй Астану</h2>
+            <a href="#/map" aria-label="Открыть карту" data-i18n-aria-label="open_map">
+              <img src="assets/icons/arrow-up-right.svg" width="20" height="20" alt="">
+            </a>
+          </div>
+          <div id="home-map">
+            <div class="map__overlay">
+              <a class="btn btn--primary" href="#/guide">
+                <img src="assets/icons/sparkles-20.svg" class="icon-on-dark" width="18" height="18" alt="">
+                <span data-i18n="pick_places">Подобрать места</span>
+              </a>
+            </div>
+          </div>
+          <p class="t-caption" data-i18n="home_map_caption">Карта © Google. Места в рекомендациях — из OpenStreetMap.</p>
+        </div>
+
+        <div class="steps">
+          <h2 class="t-h2" data-i18n="steps_title">Три шага к открытию</h2>
+          <ol class="steps__list">
+            <li class="step">
+              <span class="step__icon"><img src="assets/icons/smile.svg" width="20" height="20" alt=""></span>
+              <div>
+                <p class="step__title" data-i18n="step1_title">Выбери настроение</p>
+                <p class="t-small" data-i18n="step1_text">Кофе, природа или немного искусства — решать тебе.</p>
+              </div>
+            </li>
+            <li class="step">
+              <span class="step__icon"><img src="assets/icons/clock-3.svg" width="20" height="20" alt=""></span>
+              <div>
+                <p class="step__title" data-i18n="step2_title">Укажи время</p>
+                <p class="t-small" data-i18n="step2_text">Полчаса или целый вечер? Найдём идею под твой ритм.</p>
+              </div>
+            </li>
+            <li class="step">
+              <span class="step__icon"><img src="assets/icons/compass-step.svg" width="20" height="20" alt=""></span>
+              <div>
+                <p class="step__title" data-i18n="step3_title">Открой новые места</p>
+                <p class="t-small" data-i18n="step3_text">Смотри рекомендации и строй свой маршрут по Астане.</p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="apps" aria-labelledby="apps-title">
+        <div class="apps__head">
+          <h2 class="t-h2" id="apps-title" data-i18n="apps_title">Скоро в твоём телефоне</h2>
+          <p class="t-body" data-i18n="apps_lead">Мобильное приложение ASTANA GO AI готовится к выходу. Пока всё работает на сайте.</p>
+        </div>
+        <div class="apps__grid">
+          <article class="panel app-card" aria-labelledby="app-ios-title">
+            <span class="app-card__icon"><img src="assets/icons/lc-smartphone.svg" width="24" height="24" alt=""></span>
+            <div class="app-card__text">
+              <p class="app-card__store">App Store</p>
+              <h3 class="t-h3" id="app-ios-title" data-i18n="app_ios_title">Приложение для iPhone</h3>
+              <p class="t-small" data-i18n="app_ios_text">Появится в App Store после тестирования. Те же подборки, только в кармане.</p>
+            </div>
+            <span class="app-card__soon" data-i18n="soon">Скоро</span>
+          </article>
+          <article class="panel app-card" aria-labelledby="app-android-title">
+            <span class="app-card__icon"><img src="assets/icons/lc-tablet-smartphone.svg" width="24" height="24" alt=""></span>
+            <div class="app-card__text">
+              <p class="app-card__store">Google Play</p>
+              <h3 class="t-h3" id="app-android-title" data-i18n="app_android_title">Приложение для Android</h3>
+              <p class="t-small" data-i18n="app_android_text">Появится в Google Play после тестирования. Следи за новостями проекта.</p>
+            </div>
+            <span class="app-card__soon" data-i18n="soon">Скоро</span>
+          </article>
+        </div>
+      </section>
+    </div>
+
+    <!-- ========== AI-гид ========== -->
+    <div class="view container" data-view="guide" id="view-guide" hidden>
+      <div class="page-head">
+        <a class="back-link" href="#/">
+          <img src="assets/icons/arrow-left.svg" width="18" height="18" alt="">
+          <span data-i18n="back">Назад</span>
+        </a>
+        <h1 class="t-h1" id="guide-title" tabindex="-1" data-i18n="guide_title">Твой AI-гид</h1>
+        <p class="t-body" data-i18n="guide_lead">Маленький план для большого города.</p>
+      </div>
+
+      <div class="guide">
+        <div class="guide__side">
+            <form class="search panel" id="search-form" novalidate aria-label="Параметры поиска" data-i18n-aria-label="search_params_aria">
+              <div class="form-alert" id="form-alert" role="alert" tabindex="-1" hidden></div>
+
+              <div class="field">
+                <label class="t-label" for="query" data-i18n="query_label">Что тебе хочется?</label>
+                <div class="query-box">
+                  <img src="assets/icons/sparkles-20.svg" width="20" height="20" alt="">
+                  <textarea id="query" name="query" rows="2" maxlength="500" required
+                    placeholder="Хочу погулять час и выпить кофе..." data-i18n-placeholder="query_placeholder"
+                    aria-describedby="query-error query-counter"></textarea>
+                </div>
+                <div class="field__foot">
+                  <p class="field__error" id="query-error" hidden></p>
+                  <span class="field__counter" id="query-counter" aria-live="off">0 / 500</span>
+                </div>
+              </div>
+
+              <fieldset class="field location" id="location-field" aria-describedby="location-hint location-error">
+                <legend class="t-label" data-i18n="location_legend">Откуда начнём?</legend>
+                <div class="location__current">
+                  <img src="assets/icons/locate-fixed.svg" width="18" height="18" alt="">
+                  <div class="location__current-text" aria-live="polite">
+                    <span class="location__title" id="location-title">Точка не выбрана</span>
+                    <span class="location__sub" id="location-sub">Выбери один из вариантов ниже</span>
+                  </div>
+                </div>
+
+                <div class="location__denied" id="geo-denied" hidden>
+                  <img src="assets/icons/map-pin-off.svg" width="24" height="24" alt="">
+                  <div>
+                    <strong id="geo-denied-title">Укажи своё местоположение на карте.</strong>
+                    <span id="geo-denied-text">Можно выбрать точку вручную — доступ к геолокации не обязателен.</span>
+                  </div>
+                </div>
+
+                <div class="location__actions">
+                  <button type="button" class="btn btn--secondary btn--sm" id="geo-btn">
+                    <img src="assets/icons/locate-fixed.svg" width="18" height="18" alt="">
+                    <span class="btn__spinner" aria-hidden="true"></span>
+                    <span data-i18n="geo_btn">Использовать моё местоположение</span>
+                  </button>
+                  <button type="button" class="chip" id="pick-btn" data-i18n="pick_btn">Выбрать точку на карте</button>
+                  <button type="button" class="chip" id="center-btn" data-i18n="center_btn">Центр Астаны</button>
+                  <button type="button" class="chip" id="manual-btn" aria-expanded="false" aria-controls="manual-coords" data-i18n="manual_btn">Ввести координаты</button>
+                </div>
+
+                <div class="manual" id="manual-coords" hidden>
+                  <label><span data-i18n="lat_label">Широта (от −90 до 90)</span>
+                    <input class="input" id="manual-lat" type="text" inputmode="decimal" autocomplete="off" placeholder="51.1283" aria-describedby="manual-error">
+                  </label>
+                  <label><span data-i18n="lon_label">Долгота (от −180 до 180)</span>
+                    <input class="input" id="manual-lon" type="text" inputmode="decimal" autocomplete="off" placeholder="71.4305" aria-describedby="manual-error">
+                  </label>
+                  <p class="field__error" id="manual-error" hidden></p>
+                  <button type="button" class="btn btn--secondary btn--sm" id="manual-apply" data-i18n="manual_apply">Применить координаты</button>
+                </div>
+
+                <p class="t-caption" id="location-hint" data-i18n="location_hint">Координаты нужны только для поиска мест рядом: они отправляются на наш сервер вместе с запросом, не сохраняются в браузере и не передаются в аналитику.</p>
+                <p class="field__error" id="location-error" hidden></p>
+              </fieldset>
+
+              <fieldset class="field" id="duration-field">
+                <legend class="t-label" data-i18n="duration_legend">Сколько есть времени?</legend>
+                <div class="chips" id="duration-options"></div>
+              </fieldset>
+
+              <fieldset class="field" id="category-field" aria-describedby="category-hint">
+                <legend class="t-label" data-i18n="category_legend">Что интересно</legend>
+                <div class="chips" id="category-options"></div>
+                <p class="t-caption" id="category-hint" data-i18n="category_hint">Можно выбрать несколько. «Все» — без фильтра.</p>
+              </fieldset>
+
+              <fieldset class="field a11y-field" id="a11y-field" aria-describedby="a11y-hint">
+                <legend class="t-label icon-title">
+                  <img src="assets/icons/lc-accessibility.svg" width="16" height="16" alt="">
+                  <span data-i18n="a11y_legend">Особые потребности</span>
+                </legend>
+                <div class="chips" id="a11y-options"></div>
+                <p class="t-caption" id="a11y-hint" data-i18n="a11y_hint">Необязательно. Учитываем при подборе и честно показываем, если данных о доступности нет. Отметки нигде не сохраняются.</p>
+              </fieldset>
+
+              <div class="transport">
+                <span data-i18n="transport_label">Как доберёмся</span>
+                <span class="tag tag--primary" data-i18n="transport_walk">Пешком</span>
+              </div>
+
+              <p class="notice" id="health-warning" role="status" hidden>
+                <img src="assets/icons/wifi-off.svg" width="18" height="18" alt="">
+                <span data-i18n="health_warning">Сервер сейчас не отвечает. Форма работает, но поиск может не получиться — попробуй чуть позже.</span>
+              </p>
+
+              <button type="submit" class="btn btn--primary btn--block" id="submit-btn">
+                <span class="btn__spinner" aria-hidden="true"></span>
+                <span class="btn__label" id="submit-label" data-i18n="find">Найти места</span>
+              </button>
+              <p class="t-caption" id="search-hint" data-i18n="search_hint">Пара слов о настроении — и город станет ближе. Текст запроса может передаваться внешнему AI-сервису для объяснений, поэтому не пиши в нём личные данные.</p>
+            </form>
+
+          <section class="guide__map" id="results-aside" aria-labelledby="results-map-title" hidden>
+            <h2 class="t-h3" id="results-map-title" data-i18n="results_map_title">Места на карте</h2>
+            <div id="results-map"></div>
+            <div class="chips" id="results-map-switch" role="group" aria-label="Какое место показать на карте" data-i18n-aria-label="results_map_switch_aria"></div>
+            <a class="btn btn--secondary btn--block" href="#/map">
+              <img src="assets/icons/map-green.svg" width="18" height="18" alt="">
+              <span data-i18n="open_map">Открыть карту</span>
+            </a>
+          </section>
+        </div>
+
+        <section class="results" id="results" aria-labelledby="results-title">
           <div class="results__head">
             <p class="results__eyebrow">
               <img src="assets/icons/sparkles-16.svg" width="16" height="16" alt="">
-              Твоя подборка
+              <span data-i18n="your_pick">Твоя подборка</span>
             </p>
             <h2 class="results__title" id="results-title" tabindex="-1">Рекомендуем</h2>
             <p class="t-small" id="results-sub"></p>
@@ -178,87 +326,26 @@
           <div id="results-live" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
           <div id="results-state"></div>
           <div class="place-list" id="place-list"></div>
-          <p class="t-caption" id="results-note" hidden>
-            Расстояние указано по прямой, время — приблизительный бюджет на дорогу и посещение.
-            Места, часы и описания — из OpenStreetMap; объяснения сформулированы ИИ или по шаблону.
-            Уточняйте детали перед посещением. Данные © OpenStreetMap contributors.
-          </p>
-        </div>
-        <aside class="results__aside" id="results-aside" aria-labelledby="results-map-title" hidden>
-          <h3 class="t-h3" id="results-map-title">Все места — на одной карте</h3>
-          <div id="results-map"></div>
-          <a class="btn btn--secondary btn--block" href="#/map">
-            <img src="assets/icons/map-green.svg" width="18" height="18" alt="">
-            Открыть карту
-          </a>
-        </aside>
-      </section>
-
-      <section class="explore" aria-label="Об Астане и о сервисе">
-        <div class="explore__map">
-          <div class="section-title">
-            <h2 class="t-h2">Исследуй Астану</h2>
-            <a href="#/map" aria-label="Открыть карту">
-              <img src="assets/icons/arrow-up-right.svg" width="20" height="20" alt="">
-            </a>
-          </div>
-          <div id="home-map">
-            <div class="map__overlay">
-              <a class="btn btn--primary" href="#/map">
-                <img src="assets/icons/map-white.svg" width="18" height="18" alt="">
-                Открыть карту
-              </a>
-            </div>
-          </div>
-          <p class="t-caption">Знаковые места рядом. Карта и ориентиры показаны схематично.</p>
-        </div>
-
-        <div class="steps">
-          <h2 class="t-h2">Три шага к открытию</h2>
-          <ol class="steps__list">
-            <li class="step">
-              <span class="step__icon"><img src="assets/icons/smile.svg" width="20" height="20" alt=""></span>
-              <div>
-                <p class="step__title">Выбери настроение</p>
-                <p class="t-small">Кофе, природа или немного искусства — решать тебе.</p>
-              </div>
-            </li>
-            <li class="step">
-              <span class="step__icon"><img src="assets/icons/clock-3.svg" width="20" height="20" alt=""></span>
-              <div>
-                <p class="step__title">Укажи время</p>
-                <p class="t-small">Полчаса или целый вечер? Найдём идею под твой ритм.</p>
-              </div>
-            </li>
-            <li class="step">
-              <span class="step__icon"><img src="assets/icons/compass-step.svg" width="20" height="20" alt=""></span>
-              <div>
-                <p class="step__title">Открой новые места</p>
-                <p class="t-small">Смотри рекомендации и строй свой маршрут по Астане.</p>
-              </div>
-            </li>
-          </ol>
-        </div>
-      </section>
+          <p class="t-caption" id="results-note" data-i18n="results_note" hidden>Расстояние указано по прямой, время — приблизительный бюджет на дорогу и посещение. Места, часы и описания — из OpenStreetMap; объяснения сформулированы ИИ или по шаблону. Уточняйте детали перед посещением. Данные © OpenStreetMap contributors.</p>
+        </section>
+      </div>
     </div>
 
     <!-- ========== Карта ========== -->
     <div class="view container" data-view="map" id="view-map" hidden>
       <div class="page-head">
-        <h1 class="t-h1" id="map-title" tabindex="-1">Твоя Астана — на карте</h1>
-        <p class="t-body">Выбирай место, смотри детали и планируй прогулку.</p>
+        <h1 class="t-h1" id="map-title" tabindex="-1" data-i18n="map_title">Твоя Астана — на карте</h1>
+        <p class="t-body" data-i18n="map_lead">Выбирай место, смотри детали и планируй прогулку.</p>
       </div>
       <div class="map-layout">
         <div id="big-map"></div>
         <aside class="map-side" aria-labelledby="map-side-title">
-          <h2 class="t-h3" id="map-side-title">Твоя подборка</h2>
+          <h2 class="t-h3" id="map-side-title" data-i18n="your_pick">Твоя подборка</h2>
           <div id="map-side-list" class="map-side"></div>
-          <p class="t-caption">
-            Расстояние по прямой и время приблизительные; уточняйте детали перед посещением.
-          </p>
+          <p class="t-caption" data-i18n="map_side_note">Расстояние по прямой и время приблизительные; уточняйте детали перед посещением.</p>
         </aside>
       </div>
-      <p class="t-caption">Ориентиры и расстояния приблизительные. Схематичная карта для планирования прогулки.</p>
+      <p class="t-caption" data-i18n="map_caption">Расстояния приблизительные. Карта © Google, места — из OpenStreetMap.</p>
     </div>
 
     <!-- ========== Место ========== -->
@@ -269,25 +356,25 @@
     <div class="site-footer__inner">
       <span class="site-footer__brand">ASTANA GO AI</span>
       <span class="site-footer__links">
-        <span>Данные © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a></span>
-        <a href="styleguide.html">Компоненты и состояния</a>
+        <span><span data-i18n="footer_data">Данные ©</span> <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a></span>
+        <a href="styleguide.html" data-i18n="footer_components">Компоненты и состояния</a>
       </span>
-      <span>Твой город. Твои открытия.</span>
+      <span data-i18n="hero_eyebrow">Твой город. Твои открытия.</span>
     </div>
   </footer>
 
-  <nav class="tabbar" aria-label="Навигация">
+  <nav class="tabbar" aria-label="Навигация" data-i18n-aria-label="tabbar_aria">
     <a href="#/" data-nav="home">
       <span class="tabbar__icon"><img src="assets/icons/nav-house.svg" width="20" height="20" alt=""></span>
-      Главная
+      <span data-i18n="nav_home">Главная</span>
     </a>
     <a href="#/map" data-nav="map">
       <span class="tabbar__icon"><img src="assets/icons/nav-map.svg" width="20" height="20" alt=""></span>
-      Карта
+      <span data-i18n="nav_map">Карта</span>
     </a>
     <a href="#/guide" data-nav="guide">
       <span class="tabbar__icon"><img src="assets/icons/nav-sparkles.svg" width="20" height="20" alt=""></span>
-      AI-гид
+      <span data-i18n="nav_guide">AI-гид</span>
     </a>
   </nav>
 
@@ -295,19 +382,20 @@
     <div class="dialog__inner">
       <div class="dialog__head">
         <div>
-          <h2 class="t-h3" id="pick-title">Выбери точку отправления</h2>
-          <p class="t-small" id="pick-desc">Нажми на схему или выбери ориентир. Карта схематичная — точка будет приблизительной.</p>
+          <h2 class="t-h3" id="pick-title" data-i18n="pick_title">Выбери точку отправления</h2>
+          <p class="t-small" id="pick-desc" data-i18n="pick_desc">Нажми на карту в нужном месте или выбери ориентир. Карту можно двигать и приближать.</p>
         </div>
-        <button type="button" class="btn btn--ghost btn--sm" id="pick-close">Закрыть</button>
+        <button type="button" class="btn btn--ghost btn--sm" id="pick-close" data-i18n="close">Закрыть</button>
       </div>
       <div id="pick-map"></div>
+      <p class="t-small" id="pick-status" role="status"></p>
       <div>
-        <p class="t-label" id="pick-landmarks-title">Или начни от ориентира</p>
+        <p class="t-label" id="pick-landmarks-title" data-i18n="pick_landmarks_title">Или начни от ориентира</p>
         <div class="chips" id="pick-landmarks" role="group" aria-labelledby="pick-landmarks-title" style="margin-top: 8px"></div>
       </div>
       <div class="dialog__actions">
-        <button type="button" class="btn btn--secondary btn--sm" id="pick-cancel">Отмена</button>
-        <button type="button" class="btn btn--primary btn--sm" id="pick-confirm" disabled>Выбрать эту точку</button>
+        <button type="button" class="btn btn--secondary btn--sm" id="pick-cancel" data-i18n="cancel">Отмена</button>
+        <button type="button" class="btn btn--primary btn--sm" id="pick-confirm" data-i18n="pick_confirm" disabled>Выбрать эту точку</button>
       </div>
     </div>
   </dialog>

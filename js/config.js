@@ -13,6 +13,12 @@
   // ?mock=<сценарий> включает конкретный mock-ответ (см. README).
   const USE_MOCK = false;
 
+  // Новые поля запроса, которых пока нет в контракте (docs/proposal-accessibility-language.md).
+  // Бекенд отклоняет неизвестные поля (422), поэтому включать только когда он их поддержит.
+  // В mock-режиме они включены, чтобы показать поведение.
+  const BACKEND_SUPPORTS_ACCESSIBILITY = false;
+  const BACKEND_SUPPORTS_LANGUAGE = false;
+
   const params = new URLSearchParams(window.location.search);
   const mockParam = params.get("mock");
   const MOCK_SCENARIOS = [
@@ -31,6 +37,10 @@
     MOCK_SCENARIO: mockScenario,
     MOCK_SCENARIOS: Object.freeze(MOCK_SCENARIOS),
     MOCK_DELAY_MS: 700,
+    FEATURES: Object.freeze({
+      ACCESSIBILITY_FIELD: BACKEND_SUPPORTS_ACCESSIBILITY || mockScenario !== null,
+      LANGUAGE_FIELD: BACKEND_SUPPORTS_LANGUAGE,
+    }),
 
     REQUEST_TIMEOUT_MS: 15000,
     HEALTH_TIMEOUT_MS: 5000,
@@ -42,29 +52,59 @@
     DURATIONS: Object.freeze([15, 30, 60, 90, 120, 180, 240]),
     DEFAULT_DURATION: 60,
 
-    // Категории MVP из docs/api-contract.md.
+    // Категории MVP из docs/api-contract.md. Подписи — в js/i18n.js (cat_*, chip_*).
     CATEGORIES: Object.freeze([
-      { value: "cafe", label: "Кафе", chip: "Кофе", emoji: "☕" },
-      { value: "restaurant", label: "Ресторан", chip: "Рестораны", emoji: "🍽️" },
-      { value: "park", label: "Парк", chip: "Парки", emoji: "🌳" },
-      { value: "museum", label: "Музей", chip: "Музеи", emoji: "🏛️" },
-      { value: "attraction", label: "Достопримечательность", chip: "Достопримечательности", emoji: "📍" },
-      { value: "viewpoint", label: "Смотровая площадка", chip: "Виды", emoji: "🔭" },
-      { value: "playground", label: "Детская площадка", chip: "Детские площадки", emoji: "🛝" },
+      { value: "cafe", icon: "lc-coffee.svg" },
+      { value: "restaurant", icon: "lc-utensils.svg" },
+      { value: "park", icon: "lc-trees.svg" },
+      { value: "museum", icon: "lc-landmark.svg" },
+      { value: "attraction", icon: "lc-camera.svg" },
+      { value: "viewpoint", icon: "lc-binoculars.svg" },
+      { value: "playground", icon: "lc-baby.svg" },
     ]),
+
+    // Особые потребности (предложение к контракту: docs/proposal-accessibility-language.md).
+    ACCESSIBILITY_NEEDS: Object.freeze(["wheelchair", "low_mobility", "quiet"]),
 
     // Явно подписанный вариант «Центр Астаны» — не координаты пользователя.
     ASTANA_CENTER: Object.freeze({ lat: 51.1605, lon: 71.4704 }),
 
-    // Сценарии для демо (раздел 6 ТЗ) + пара быстрых идей из макета.
+    // Быстрые идеи. Подпись и текст запроса — в js/i18n.js (sc_<id>, sc_<id>_q).
     SCENARIOS: Object.freeze([
-      { id: "walk", label: "🌿 Короткая прогулка", query: "Хочу короткую прогулку", duration: 30, categories: ["park"] },
-      { id: "coffee", label: "☕ Кофе рядом", query: "Кофе рядом", duration: 15, categories: ["cafe"] },
-      { id: "family", label: "👨‍👩‍👧 С семьёй", query: "Куда сходить с семьёй", duration: 120, categories: ["park", "playground", "museum"] },
-      { id: "culture", label: "🎨 Культура", query: "Хочу посмотреть что-нибудь интересное в городе", duration: 90, categories: ["museum", "attraction"] },
-      { id: "views", label: "✨ Что-то необычное", query: "Хочу красивые виды и что-то необычное", duration: 60, categories: ["viewpoint", "attraction"] },
+      { id: "walk", icon: "lc-footprints.svg", duration: 30, categories: ["park"] },
+      { id: "coffee", icon: "lc-coffee.svg", duration: 15, categories: ["cafe"] },
+      { id: "family", icon: "lc-users.svg", duration: 120, categories: ["park", "playground", "museum"] },
+      { id: "culture", icon: "lc-palette.svg", duration: 90, categories: ["museum", "attraction"] },
+      { id: "views", icon: "sparkles-16.svg", duration: 60, categories: ["viewpoint", "attraction"] },
+      { id: "dinner", icon: "lc-utensils.svg", duration: 90, categories: ["restaurant"] },
+      { id: "kids", icon: "lc-baby.svg", duration: 60, categories: ["playground"] },
+      { id: "evening", icon: "lc-moon.svg", duration: 90, categories: ["park", "viewpoint"] },
     ]),
 
     OSM_COPYRIGHT_URL: "https://www.openstreetmap.org/copyright",
+
+    // Карта выбора точки: стартовый вид и ориентиры (координаты приблизительные).
+    MAP_DEFAULT_CENTER: Object.freeze({ lat: 51.128, lon: 71.43 }),
+    // Названия — в js/i18n.js (lm_<key>). Mega Silk Way и аэропорт — из сценариев кейса.
+    LANDMARKS: Object.freeze([
+      { key: "baiterek", lat: 51.1283, lon: 71.4305 },
+      { key: "khan_shatyr", lat: 51.1323, lon: 71.4036 },
+      { key: "akorda", lat: 51.1258, lon: 71.4466 },
+      { key: "nurzhol", lat: 51.1252, lon: 71.4185 },
+      { key: "botanical", lat: 51.1105, lon: 71.412 },
+      { key: "expo", lat: 51.089, lon: 71.4155 },
+      { key: "mega", lat: 51.0893, lon: 71.4093 },
+      { key: "nu", lat: 51.0905, lon: 71.3985 },
+      { key: "airport", lat: 51.0222, lon: 71.4669 },
+    ]),
+
+    // Виджеты главной (внешние сервисы без ключей, данные пользователя не передаются).
+    WEATHER_POINT: Object.freeze({ lat: 51.1694, lon: 71.4491 }), // Астана
+    WIDGET_TIMEOUT_MS: 8000,
+    NEWS_TIMEOUT_MS: 20000, // GDELT бывает медленным
+    NEWS_ATTEMPTS: 3,
+    NEWS_COUNT: 5,
+    NEWS_CACHE_MS: 20 * 60 * 1000,
+    NEWS_MORE_URL: "https://news.google.com/search?q=%D0%90%D1%81%D1%82%D0%B0%D0%BD%D0%B0&hl=ru&gl=KZ&ceid=KZ%3Aru",
   });
 })();

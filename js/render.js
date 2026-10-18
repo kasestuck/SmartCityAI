@@ -6,6 +6,8 @@
   "use strict";
 
   const CFG = window.APP_CONFIG;
+  const I = window.I18N;
+  const t = I.t;
   const ICONS = "assets/icons/";
 
   function isPresent(v) {
@@ -45,48 +47,39 @@
   function formatDistance(meters) {
     if (!isPresent(meters)) return null;
     const rounded = Math.round(meters);
-    if (rounded < 1000) return `${rounded} м`;
-    return `${(meters / 1000).toFixed(1).replace(".", ",")} км`;
+    if (rounded < 1000) return t("unit_m", { n: rounded });
+    return t("unit_km", { n: I.decimal(meters / 1000) });
   }
 
   function formatMinutes(min) {
     if (!isPresent(min)) return null;
-    return `≈ ${Math.round(min)} мин`;
+    return t("min_approx", { n: Math.round(min) });
   }
 
   function formatDurationChoice(min) {
-    if (min < 60) return `${min} мин`;
+    if (min < 60) return t("dur_min", { n: min });
     const h = min / 60;
-    if (h === 1) return "1 час";
-    if (Number.isInteger(h)) return `${h} ${h < 5 ? "часа" : "часов"}`;
-    return `${String(h).replace(".", ",")} часа`;
+    if (h === 1) return t("dur_hour");
+    return t("dur_hours", { n: Number.isInteger(h) ? h : I.decimal(h) });
   }
 
   function pluralPlaces(n) {
-    const mod10 = n % 10;
-    const mod100 = n % 100;
-    if (mod10 === 1 && mod100 !== 11) return "место";
-    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "места";
-    return "мест";
+    return I.places(n);
   }
 
   function categoryInfo(value) {
     const found = CFG.CATEGORIES.find((c) => c.value === value);
-    if (found) return found;
-    return { value: value || "other", label: isPresent(value) ? value : "Место", emoji: "📍" };
+    if (found) return { value, icon: found.icon, label: t(`cat_${value}`), chip: t(`chip_${value}`) };
+    return { value: value || "other", label: isPresent(value) ? value : t("cat_other"), chip: value, icon: "lc-map-pin.svg" };
   }
 
-  function osmPlaceUrl(place) {
-    const lat = place.latitude.toFixed(6);
-    const lon = place.longitude.toFixed(6);
-    return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=17/${lat}/${lon}`;
+  // Google Карты: передаём только координаты места, не пользователя.
+  function placeUrl(place) {
+    return window.GMap.placeUrl(place.latitude, place.longitude);
   }
 
-  // Маршрут строится на сайте OSM: передаём только точку назначения,
-  // координаты пользователя третьей стороне не отправляем.
-  function osmRouteUrl(place) {
-    const dest = `${place.latitude.toFixed(6)},${place.longitude.toFixed(6)}`;
-    return `https://www.openstreetmap.org/directions?engine=fossgis_osrm_foot&route=%3B${encodeURIComponent(dest)}`;
+  function routeUrl(place) {
+    return window.GMap.routeUrl(place.latitude, place.longitude);
   }
 
   function hasCoords(place) {
@@ -96,9 +89,9 @@
   function metaLine(place) {
     const parts = [];
     const d = formatDistance(place.distance_meters);
-    if (d) parts.push(`≈ ${d} по прямой`);
-    const t = formatMinutes(place.estimated_duration_minutes);
-    if (t) parts.push(`${t} на дорогу и визит`);
+    if (d) parts.push(t("meta_dist", { d }));
+    const m = formatMinutes(place.estimated_duration_minutes);
+    if (m) parts.push(t("meta_time", { t: m }));
     return parts.join(" · ");
   }
 
@@ -107,8 +100,8 @@
     return el(
       "div",
       { class: "place-visual", attrs: { "data-category": cat.value, "aria-hidden": "true" } },
-      badge ? el("span", { class: "badge-ai" }, icon("sparkles-12.svg", 12), "Совет AI") : null,
-      el("span", { class: "place-visual__emoji", text: cat.emoji }),
+      badge ? el("span", { class: "badge-ai" }, icon("sparkles-12.svg", 12), t("ai_tip")) : null,
+      icon(cat.icon, 40, "place-visual__icon"),
       index ? el("span", { class: "place-visual__num", text: String(index) }) : null
     );
   }
@@ -123,8 +116,24 @@
     );
   }
 
+  // Доступность для коляски — только из тега OSM wheelchair, без догадок.
+  const WHEELCHAIR = { yes: "a11y_wc_yes", limited: "a11y_wc_limited", no: "a11y_wc_no" };
+
+  function accessibilityText(place, asked) {
+    const key = WHEELCHAIR[place.wheelchair];
+    if (key) return t(key);
+    return asked ? t("a11y_wc_unknown") : null;
+  }
+
+  function accessibilityBadge(place, asked) {
+    const text = accessibilityText(place, asked);
+    if (!text) return null;
+    const level = WHEELCHAIR[place.wheelchair] ? place.wheelchair : "unknown";
+    return el("p", { class: `a11y-badge a11y-badge--${level}` }, icon("lc-accessibility.svg", 16), text);
+  }
+
   /** Карточка рекомендации (макет «AI-гид · Карточка места»). */
-  function placeCard(place, { index, selected = false, compactActions = false } = {}) {
+  function placeCard(place, { index, selected = false, compactActions = false, askedWheelchair = false } = {}) {
     const cat = categoryInfo(place.category);
     const meta = metaLine(place);
     const card = el("article", {
@@ -146,13 +155,14 @@
         ),
         meta ? el("p", { class: "place-card__meta", text: meta }) : null
       ),
+      accessibilityBadge(place, askedWheelchair),
       isPresent(place.description) ? el("p", { class: "place-card__text", text: place.description }) : null,
       isPresent(place.reason) ? el("p", { class: "reason-box", text: place.reason }) : null,
       isPresent(place.suggested_action)
-        ? el("p", { class: "place-card__text" }, el("b", { text: "Что делать: " }), place.suggested_action)
+        ? el("p", { class: "place-card__text" }, el("b", { text: t("what_to_do") }), place.suggested_action)
         : null,
       isPresent(place.opening_hours)
-        ? el("p", { class: "place-card__text" }, el("b", { text: "Часы работы (по данным OSM): " }), place.opening_hours)
+        ? el("p", { class: "place-card__text" }, el("b", { text: t("hours_osm") }), place.opening_hours)
         : null
     );
 
@@ -163,7 +173,7 @@
           el(
             "a",
             { class: "btn btn--secondary", attrs: { href: `#/map/${encodeURIComponent(place.id)}` } },
-            "На карте",
+            t("on_map"),
             el("span", { class: "visually-hidden", text: `: ${place.name}` })
           )
         );
@@ -171,9 +181,9 @@
       actions.append(
         externalLink(
           "btn btn--primary",
-          osmRouteUrl(place),
-          "Маршрут",
-          ` до «${place.name}» в OpenStreetMap (откроется в новой вкладке)`,
+          routeUrl(place),
+          t("route"),
+          t("route_sr", { name: place.name }),
           "navigation-white.svg"
         )
       );
@@ -181,7 +191,7 @@
     }
 
     if (isPresent(place.source)) {
-      body.append(el("p", { class: "place-card__source", text: `Источник: ${place.source}` }));
+      body.append(el("p", { class: "place-card__source", text: t("source", { s: place.source }) }));
     }
 
     card.append(placeVisual(place, { index }), body);
@@ -252,11 +262,12 @@
     formatDistance,
     formatMinutes,
     formatDurationChoice,
+    accessibilityText,
     pluralPlaces,
     categoryInfo,
     metaLine,
-    osmPlaceUrl,
-    osmRouteUrl,
+    placeUrl,
+    routeUrl,
     externalLink,
     placeVisual,
     placeCard,

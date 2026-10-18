@@ -82,6 +82,8 @@
         suggested_action: typeof r.suggested_action === "string" ? r.suggested_action : null,
         opening_hours: typeof r.opening_hours === "string" ? r.opening_hours : null,
         source: typeof r.source === "string" ? r.source : null,
+        // Предлагаемое поле (docs/proposal-accessibility-language.md): значение тега OSM wheelchair.
+        wheelchair: ["yes", "limited", "no"].includes(r.wheelchair) ? r.wheelchair : null,
       }));
   }
 
