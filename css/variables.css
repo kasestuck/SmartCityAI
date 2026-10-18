@@ -1,0 +1,65 @@
+/* Design tokens from Figma «СмартИИ» (ASTANA GO AI). */
+:root {
+  /* Цвета */
+  --color-bg: #f8f7f3;            /* цвет/фон */
+  --color-surface: #ffffff;       /* цвет/поверхность */
+  --color-primary: #204e43;       /* цвет/основной */
+  --color-primary-hover: #183d34;
+  --color-text: #202824;          /* цвет/текст */
+  --color-muted: #59675f;
+  --color-subtle: #79837d;
+  --color-border: #e6eae5;        /* цвет/граница */
+  --color-accent: #e8a17a;        /* цвет/акцент */
+  --color-tint: #edf3ee;
+  --color-warn-tint: #fcf0e7;
+  --color-danger: #a8402a;
+  --color-danger-tint: #fbeae5;
+  --color-focus: #2f7a68;
+
+  /* Схема карты */
+  --map-ground: #f0efe8;
+  --map-block: #e6e4db;
+  --map-block-green: #e4e8d9;
+  --map-park: #dce7d1;
+  --map-water: #c4e0e4;
+  --map-street: #ffffff;
+
+  /* Шрифты */
+  --font-display: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Отступы */
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-40: 40px;
+
+  /* Скругления */
+  --radius-10: 10px;
+  --radius-12: 12px;
+  --radius-14: 14px;
+  --radius-16: 16px;
+  --radius-20: 20px;
+  --radius-24: 24px;
+  --radius-pill: 100px;
+
+  /* Тени */
+  --shadow-card: 0 6px 20px rgba(32, 78, 67, 0.05);
+  --shadow-marker: 0 8px 24px rgba(32, 60, 67, 0.13);
+
+  /* Сетка */
+  --container: 1200px;
+  --gutter: 16px;
+  --header-h: 72px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 32px;
+    --header-h: 88px;
+  }
+}
