@@ -1,0 +1,10 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="compass" clip-path="url(#clip0_0_27)">
+<path id="Vector" d="M18.334 10C18.334 14.6027 14.6027 18.334 10 18.334C5.39726 18.334 1.666 14.6027 1.666 10C1.666 5.39726 5.39726 1.666 10 1.666C14.6027 1.666 18.334 5.39726 18.334 10ZM13.5334 6.46619L12.03 10.9757C11.9481 11.2212 11.8103 11.4443 11.6273 11.6273C11.4443 11.8103 11.2212 11.9481 10.9757 12.03L6.46619 13.5334L7.96964 9.02389C8.05147 8.77839 8.18933 8.55531 8.37232 8.37232C8.55531 8.18933 8.77839 8.05147 9.02389 7.96964L13.5334 6.46619Z" stroke-width="1.8" stroke-linecap="round" stroke="#204E43"/>
+</g>
+<defs>
+<clipPath id="clip0_0_27">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>

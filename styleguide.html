@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Компоненты и состояния — ASTANA GO AI</title>
+  <link rel="icon" href="assets/icons/brand-compass.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <script src="js/config.js" defer></script>
+  <script src="js/mock-data.js" defer></script>
+  <script src="js/render.js" defer></script>
+  <script src="js/map.js" defer></script>
+  <script src="js/styleguide.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Перейти к содержанию</a>
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="logo" href="index.html" aria-label="ASTANA GO AI — на главную">
+        <span class="logo__mark"><img src="assets/icons/brand-compass.svg" width="20" height="20" alt=""></span>
+        <span class="logo__name" aria-hidden="true">ASTANA GO AI</span>
+      </a>
+      <nav class="site-nav" aria-label="Основная навигация">
+        <a href="index.html#/">Главная</a>
+        <a href="index.html#/map">Карта</a>
+        <a href="index.html#/guide">AI-гид</a>
+      </nav>
+      <div class="header-meta">
+        <span class="city"><img src="assets/icons/map-pin-header.svg" width="16" height="16" alt=""> Астана</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="view container" tabindex="-1">
+    <div class="page-head">
+      <p class="t-eyebrow">ASTANA GO AI · Компоненты</p>
+      <h1 class="t-display" style="font-size: clamp(28px, 4vw, 36px)">Понятный ответ в любой ситуации</h1>
+      <p class="t-body">Витрина компонентов и состояний интерфейса из Figma. Карточки собираются тем же кодом, что и на сайте, из mock-данных.</p>
+    </div>
+
+    <section class="sg-section" aria-labelledby="sg-colors">
+      <h2 class="t-h2" id="sg-colors">Цвета</h2>
+      <div class="sg-row">
+        <div class="sg-swatch"><span style="background: var(--color-bg)"></span><span>Фон · #f8f7f3</span></div>
+        <div class="sg-swatch"><span style="background: var(--color-surface)"></span><span>Поверхность · #fff</span></div>
+        <div class="sg-swatch"><span style="background: var(--color-primary)"></span><span>Основной · #204e43</span></div>
+        <div class="sg-swatch"><span style="background: var(--color-text)"></span><span>Текст · #202824</span></div>
+        <div class="sg-swatch"><span style="background: var(--color-muted)"></span><span>Вторичный · #59675f</span></div>
+        <div class="sg-swatch"><span style="background: var(--color-border)"></span><span>Граница · #e6eae5</span></div>
+        <div class="sg-swatch"><span style="background: var(--color-accent)"></span><span>Акцент · #e8a17a</span></div>
+        <div class="sg-swatch"><span style="background: var(--color-tint)"></span><span>Подложка · #edf3ee</span></div>
+      </div>
+    </section>
+
+    <section class="sg-section" aria-labelledby="sg-type">
+      <h2 class="t-h2" id="sg-type">Типографика</h2>
+      <p class="t-eyebrow">Надзаголовок · Manrope 11</p>
+      <p class="t-display">Заголовок · Manrope 52</p>
+      <p class="t-h1">Заголовок страницы · 28</p>
+      <p class="t-h2">Заголовок раздела · 24</p>
+      <p class="t-h3">Подзаголовок · 18</p>
+      <p class="t-lead">Вводный текст · Inter 16</p>
+      <p class="t-body">Основной текст · Inter 14</p>
+      <p class="t-small">Мелкий текст · Inter 12</p>
+      <p class="t-caption">Подпись · Inter 11</p>
+    </section>
+
+    <section class="sg-section" aria-labelledby="sg-buttons">
+      <h2 class="t-h2" id="sg-buttons">Кнопки</h2>
+      <div class="sg-grid">
+        <div class="sg-sample">
+          <p class="t-label">Основная · обычная / с иконкой / загрузка / недоступна</p>
+          <button type="button" class="btn btn--primary btn--block">Найти места ✨</button>
+          <button type="button" class="btn btn--primary btn--block"><img src="assets/icons/navigation-white.svg" width="18" height="18" alt="">Построить маршрут</button>
+          <button type="button" class="btn btn--primary btn--block is-loading" disabled><span class="btn__spinner" aria-hidden="true"></span>Подбираем места…</button>
+          <button type="button" class="btn btn--primary btn--block" disabled>Подождите 42 с</button>
+        </div>
+        <div class="sg-sample">
+          <p class="t-label">Вторичная · обычная / с иконкой / маленькая / таблетка</p>
+          <button type="button" class="btn btn--secondary btn--block">Изменить запрос</button>
+          <button type="button" class="btn btn--secondary btn--block"><img src="assets/icons/map-green.svg" width="18" height="18" alt="">На карте</button>
+          <div class="sg-row">
+            <button type="button" class="btn btn--secondary btn--sm"><img src="assets/icons/locate-fixed.svg" width="18" height="18" alt="">Использовать моё местоположение</button>
+            <button type="button" class="btn btn--secondary btn--pill"><img src="assets/icons/arrow-left.svg" width="18" height="18" alt="">Назад</button>
+            <button type="button" class="btn btn--ghost btn--sm">Закрыть</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sg-section" aria-labelledby="sg-fields">
+      <h2 class="t-h2" id="sg-fields">Поля</h2>
+      <div class="sg-grid">
+        <div class="field">
+          <label class="t-label" for="sg-q1">Поле запроса</label>
+          <div class="query-box">
+            <img src="assets/icons/sparkles-20.svg" width="20" height="20" alt="">
+            <textarea id="sg-q1" rows="2" placeholder="Хочу погулять час и выпить кофе..."></textarea>
+          </div>
+        </div>
+        <div class="field">
+          <label class="t-label" for="sg-q2">Поле с ошибкой</label>
+          <div class="query-box">
+            <img src="assets/icons/sparkles-20.svg" width="20" height="20" alt="">
+            <textarea id="sg-q2" rows="2" aria-invalid="true" aria-describedby="sg-q2-err"></textarea>
+          </div>
+          <p class="field__error" id="sg-q2-err">Напиши пару слов о том, чего хочется.</p>
+        </div>
+        <div class="field">
+          <label class="t-label" for="sg-in">Числовое поле</label>
+          <input class="input" id="sg-in" type="text" inputmode="decimal" placeholder="51.1283">
+        </div>
+        <div class="form-alert">Некорректные параметры запроса. Проверь текст запроса и параметры поиска.</div>
+      </div>
+    </section>
+
+    <section class="sg-section" aria-labelledby="sg-chips">
+      <h2 class="t-h2" id="sg-chips">Фильтры, теги, метки</h2>
+      <div class="sg-row">
+        <span class="chip chip--selected">Все</span>
+        <span class="chip">Парки</span>
+        <span class="chip">30 мин</span>
+        <span class="chip chip--selected">1 час</span>
+        <span class="chip">2 часа</span>
+        <span class="tag tag--primary">Пешком</span>
+        <span class="tag"><img src="assets/icons/clock-3.svg" width="14" height="14" alt="">≈ 45 мин</span>
+        <span class="badge-ai"><img src="assets/icons/sparkles-12.svg" width="12" height="12" alt="">Совет AI</span>
+        <span class="badge-soft"><img src="assets/icons/sparkles-12.svg" width="12" height="12" alt="">3 места для тебя</span>
+      </div>
+      <p class="notice"><img src="assets/icons/wifi-off.svg" width="18" height="18" alt="">Не удалось загрузить рекомендации.</p>
+    </section>
+
+    <section class="sg-section" aria-labelledby="sg-cards">
+      <h2 class="t-h2" id="sg-cards">Карточки мест</h2>
+      <div id="sg-card" class="place-list"></div>
+      <div class="sg-grid">
+        <div id="sg-mini" class="map-side"></div>
+        <div id="sg-map"></div>
+      </div>
+    </section>
+
+    <section class="sg-section" aria-labelledby="sg-states">
+      <h2 class="t-h2" id="sg-states">Состояния интерфейса</h2>
+      <div class="sg-grid" id="sg-state-grid"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer container">
+    <div class="site-footer__inner">
+      <span class="site-footer__brand">ASTANA GO AI</span>
+      <span>Данные © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a></span>
+      <span>Твой город. Твои открытия.</span>
+    </div>
+  </footer>
+</body>
+</html>
