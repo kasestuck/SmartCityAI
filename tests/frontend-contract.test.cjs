@@ -95,11 +95,12 @@ function fixture(overrides = {}) {
     }],
     query_context: { latitude: 51.09, longitude: 71.42, categories: ["cafe"], duration_minutes: 30, transport: "walking" },
     language: "ru",
+    has_more: false,
     ...overrides,
   };
 }
 
-function browser({ lang = "ru", body = fixture(), status = 200, search = "", main = false } = {}) {
+function browser({ lang = "ru", body = fixture(), status = 200, search = "", main = false, responses = null, clock = null } = {}) {
   const document = new Element("document");
   document.documentElement = new Element("html");
   document.createElement = (tag) => new Element(tag);
@@ -122,15 +123,26 @@ function browser({ lang = "ru", body = fixture(), status = 200, search = "", mai
     matchMedia: () => ({ matches: true }), scrollTo() {},
     GMap: { create: () => ({ show() {} }), routeUrl: () => "https://maps.google.com", placeUrl: () => "https://maps.google.com" },
     Widgets: { loadWeather() {}, loadNews() {}, rerender() {} },
+    Poi: { loadAll: async () => ({ source: "snapshot", places: [] }), around: () => [] },
+    PlacesMap: {
+      CATEGORY_COLORS: {},
+      create: async () => ({ show(data) { window.mapPlaces = data.places; }, select() {}, resize() {}, setPoi() {} }),
+    },
     fetch: async (url, init) => {
       if (url.endsWith("/api/health")) return new Response('{"status":"ok"}');
       requests.push({ url, ...init, payload: JSON.parse(init.body) });
-      return new Response(JSON.stringify(body), { status });
+      const next = responses ? responses.shift() : { body, status };
+      const response = typeof next === "function" ? await next() : next;
+      return new Response(JSON.stringify(response.body), { status: response.status || 200 });
     },
   };
   const context = vm.createContext({
     window, document, Node: Element, URLSearchParams, URL, Response, AbortController, DOMException,
-    setTimeout, clearTimeout, setInterval, clearInterval, requestAnimationFrame: (fn) => fn(),
+    setTimeout, clearTimeout,
+    Date: clock ? class extends Date { static now() { return clock.now; } } : Date,
+    setInterval: clock ? (fn) => { clock.tick = fn; return 1; } : setInterval,
+    clearInterval: clock ? () => {} : clearInterval,
+    requestAnimationFrame: (fn) => fn(),
     navigator: { language: lang }, localStorage: { getItem: () => null, setItem() {} },
     history: { pushState: (_, __, hash) => { window.location.hash = hash; }, replaceState: (_, __, hash) => { window.location.hash = hash; } },
   });
@@ -278,4 +290,235 @@ test("mock keeps the supported accessibility hint before searching", () => {
   assert.match(b.document.getElementById("a11y-hint").textContent, /Учитываем при подборе/);
   b.window.I18N.set("en");
   assert.match(b.document.getElementById("a11y-hint").textContent, /We use it when picking places/);
+});
+
+
+const settle = () => new Promise(setImmediate);
+const page = (ids, has_more = true) => fixture({
+  has_more,
+  recommendations: ids.map((id) => ({ ...fixture().recommendations[0], id, name: "Place " + id })),
+});
+const cardIds = (b) => b.document.getElementById("place-list").children.map((node) => node.getAttribute("data-id"));
+const more = (b) => b.document.getElementById("load-more");
+
+test("pagination appends unique cards and keeps the initial search payload when the form changes", async () => {
+  const b = browser({ main: true, responses: [
+    { body: page(["one", "two", "three"]) },
+    { body: page(["three", "four", "five"]) },
+    { body: page(["six"], false) },
+  ] });
+  b.document.getElementById("category-cafe").checked = true;
+  await b.search();
+  const original = structuredClone(b.requests[0].payload);
+  b.document.getElementById("query").value = "Completely different request";
+  b.document.getElementById("category-cafe").checked = false;
+  b.document.getElementById("duration-30").checked = true;
+  b.document.getElementById("manual-lat").value = "50";
+  b.document.getElementById("manual-lon").value = "70";
+  b.document.getElementById("manual-apply").dispatch("click");
+  b.window.I18N.set("kk");
+  const firstCard = b.document.getElementById("place-list").children[0];
+  assert.ok(more(b), "the recommendations need a load-more action");
+  more(b).dispatch("click");
+  await settle();
+  assert.deepEqual(b.requests[1].payload, { ...original, exclude_ids: ["one", "two", "three"] });
+  assert.deepEqual(cardIds(b), ["one", "two", "three", "four", "five"]);
+  assert.equal(b.document.getElementById("place-list").children[0], firstCard, "existing cards stay mounted during append");
+  more(b).dispatch("click");
+  await settle();
+  assert.deepEqual(b.requests[2].payload.exclude_ids, ["one", "two", "three", "four", "five"]);
+  assert.deepEqual(cardIds(b), ["one", "two", "three", "four", "five", "six"]);
+  assert.equal(more(b).hidden, true);
+  b.route("#/place/six");
+  assert.match(b.document.getElementById("view-place").textContent, /Place six/);
+});
+
+test("pagination blocks duplicate clicks and ignores a late page after a new search", async () => {
+  let resolvePage;
+  const pending = new Promise((resolve) => { resolvePage = resolve; });
+  const b = browser({ main: true, responses: [
+    { body: page(["old"]) }, () => pending, { body: page(["fresh"], false) },
+  ] });
+  await b.search();
+  assert.ok(more(b));
+  more(b).dispatch("click");
+  more(b).dispatch("click");
+  assert.equal(more(b).disabled, true);
+  assert.equal(b.requests.length, 2);
+  await b.search();
+  assert.deepEqual(cardIds(b), ["fresh"]);
+  assert.equal("exclude_ids" in b.requests[2].payload, false);
+  resolvePage({ body: page(["stale"]) });
+  await settle();
+  assert.deepEqual(cardIds(b), ["fresh"]);
+  assert.equal(more(b).hidden, true);
+});
+
+test("a failed page preserves cards and retries the same exclusions", async () => {
+  const b = browser({ main: true, responses: [
+    { body: page(["one"]) }, { status: 500, body: { error: { code: "internal" } } },
+    { body: page(["two"], false) },
+  ] });
+  await b.search();
+  assert.ok(more(b));
+  more(b).dispatch("click");
+  await settle();
+  assert.deepEqual(cardIds(b), ["one"]);
+  assert.equal(more(b).disabled, false);
+  assert.match(b.document.getElementById("load-more-status").textContent, /Не удалось/);
+  more(b).dispatch("click");
+  await settle();
+  assert.deepEqual(b.requests[2].payload, b.requests[1].payload);
+  assert.deepEqual(cardIds(b), ["one", "two"]);
+});
+
+for (const ids of [[], ["one"]]) {
+  test("a page with no unseen cards stops further requests: " + JSON.stringify(ids), async () => {
+    const b = browser({ main: true, responses: [{ body: page(["one"]) }, { body: page(ids, true) }] });
+    await b.search();
+    assert.ok(more(b));
+    more(b).dispatch("click");
+    await settle();
+    assert.deepEqual(cardIds(b), ["one"]);
+    assert.equal(more(b).hidden, true);
+    more(b).dispatch("click");
+    assert.equal(b.requests.length, 2);
+  });
+}
+
+test("API normalizes pagination and allows only the category's local illustration URL", async () => {
+  const body = page(["one"]);
+  body.recommendations[0].image_url = "/assets/icons/lc-coffee.svg";
+  const good = await browser({ body }).window.Api.getRecommendations({});
+  assert.equal(good.has_more, true);
+  assert.equal(good.recommendations[0].image_url, "/assets/icons/lc-coffee.svg");
+  for (const value of ["https://example.com/photo.jpg", "//example.com/a.svg", "/assets/icons/../../secret", "/assets/icons/lc-trees.svg", {}, null]) {
+    body.recommendations[0].image_url = value;
+    body.has_more = "true";
+    const result = await browser({ body }).window.Api.getRecommendations({});
+    assert.equal(result.has_more, false);
+    assert.equal(result.recommendations[0].image_url, null);
+  }
+});
+
+test("category illustrations use local SVGs, localized labels and a safe unknown fallback", () => {
+  const cases = [
+    ["cafe", "lc-coffee.svg"], ["restaurant", "lc-utensils.svg"], ["park", "lc-trees.svg"],
+    ["museum", "lc-landmark.svg"], ["attraction", "lc-camera.svg"], ["viewpoint", "lc-binoculars.svg"],
+    ["playground", "lc-baby.svg"], ["internal_4711", "lc-map-pin.svg"],
+  ];
+  for (const lang of ["ru", "kk", "en"]) {
+    const b = browser({ lang });
+    for (const [category, filename] of cases) {
+      const visual = b.window.Render.placeVisual({ category, image_url: "https://example.com/photo.jpg" });
+      const image = visual.querySelector(".place-visual__icon");
+      assert.equal(image.getAttribute("src"), "assets/icons/" + filename);
+      assert.ok(image.getAttribute("alt"));
+      assert.equal(visual.getAttribute("aria-hidden"), null);
+      assert.doesNotMatch(visual.textContent + image.getAttribute("alt"), /internal_4711|https:|photo\.jpg/);
+      assert.ok(fs.existsSync(path.join(root, image.getAttribute("src"))));
+    }
+  }
+});
+
+
+test("map includes appended recommendations and can select an appended card", async () => {
+  const b = browser({ main: true, responses: [{ body: page(["one", "two", "three"]) }, { body: page(["four"], false) }] });
+  await b.search();
+  more(b).dispatch("click");
+  await settle();
+  b.route("#/map/four");
+  await settle();
+  assert.deepEqual(Array.from(b.window.mapPlaces, (p) => p.id), ["one", "two", "three", "four"]);
+  assert.equal(b.document.getElementById("map-side-list").querySelector(".place-card").getAttribute("data-id"), "four");
+});
+
+test("technical names are replaced throughout cards, maps and details in the current UI language", async () => {
+  const body = fixture();
+  body.recommendations[0].name = "osm_node_123";
+  const b = browser({ main: true, body });
+  await b.search();
+  assert.doesNotMatch(b.document.getElementById("place-list").textContent, /osm_node_123/);
+  assert.match(b.document.getElementById("place-list").textContent, /Точное название уточняется/);
+  b.route("#/map/osm_node_123");
+  await settle();
+  assert.equal(b.window.mapPlaces[0].name, "Точное название уточняется");
+  b.route("#/place/osm_node_123");
+  assert.doesNotMatch(b.document.getElementById("view-place").textContent, /osm_node_123/);
+  assert.doesNotMatch(b.document.title, /osm_node_123/);
+  b.window.I18N.set("kk");
+  assert.match(b.document.getElementById("view-place").textContent, /Нақты атауы нақтылануда/);
+  b.window.I18N.set("en");
+  assert.match(b.document.getElementById("view-place").textContent, /Exact name to be confirmed/);
+});
+
+test("display names reject code-only labels without removing brands that include digits", () => {
+  const b = browser();
+  const rejected = ["", "12345", "№ 123", "---", "node/123", "way 456", "relation:789", "id=123", "ref-123", "T34-85", "Т-34–85", "Ｔ３４－８５"];
+  for (const name of rejected) {
+    const card = b.window.Render.placeCard({ id: "opaque-id", name });
+    assert.equal(card.querySelector(".place-card__name").textContent, "Точное название уточняется", name);
+  }
+  for (const name of ["Qazaq24", "Platforma8", "Fest425", "Z-1", "А8", "Назарбаев орталығы-2", "Кафе № 7"]) {
+    const card = b.window.Render.placeCard({ id: "opaque-id", name });
+    assert.equal(card.querySelector(".place-card__name").textContent, name);
+  }
+});
+
+test("mock continuation excludes displayed IDs, stays in chosen categories and exhausts", async () => {
+  const b = browser({ search: "&mock=1" });
+  b.load("js/mock-data.js");
+  const payload = { latitude: 51.09, longitude: 71.42, query: "walk", duration_minutes: 120, transport: "walking", categories: ["cafe", "park"], language: "ru" };
+  const first = await b.window.Api.getRecommendations(payload);
+  assert.equal(first.has_more, true);
+  const second = await b.window.Api.getRecommendations({ ...payload, exclude_ids: first.recommendations.map((p) => p.id) });
+  assert.ok(second.recommendations.length > 0);
+  assert.equal(second.has_more, false);
+  const all = [...first.recommendations, ...second.recommendations];
+  assert.equal(new Set(all.map((p) => p.id)).size, all.length);
+  assert.ok(all.every((p) => ["cafe", "park"].includes(p.category)));
+  assert.ok(all.every((p) => p.image_url?.startsWith("/assets/icons/")));
+});
+
+
+test("rate-limited pagination keeps cards and offers retry after the cooldown", async () => {
+  const clock = { now: 1000000 };
+  const b = browser({ main: true, clock, responses: [
+    { body: page(["one"]) }, { status: 429, body: { error: { code: "rate_limited" } } },
+    { body: page(["two"], false) },
+  ] });
+  await b.search();
+  more(b).dispatch("click");
+  await settle();
+  assert.deepEqual(cardIds(b), ["one"]);
+  assert.equal(more(b).disabled, true);
+  assert.match(more(b).textContent, /Подождите 60 с/);
+  more(b).dispatch("click");
+  assert.equal(b.requests.length, 2);
+  clock.now += 30000;
+  clock.tick();
+  assert.match(more(b).textContent, /Подождите 30 с/);
+  clock.now += 31000;
+  clock.tick();
+  assert.equal(more(b).disabled, false);
+  more(b).dispatch("click");
+  await settle();
+  assert.deepEqual(b.requests[2].payload, b.requests[1].payload);
+  assert.deepEqual(cardIds(b), ["one", "two"]);
+});
+
+
+test("category illustrations resolve inside a file preview and a hosted subdirectory", () => {
+  const b = browser();
+  const known = b.window.Render.placeVisual({ category: "cafe", image_url: "/assets/icons/lc-coffee.svg" });
+  const fallback = b.window.Render.placeVisual({ category: "unknown", image_url: "https://example.com/remote.svg" });
+  for (const [base, expectedPrefix] of [
+    ["file:///C:/repo/index.html", "file:///C:/repo/assets/icons/"],
+    ["https://example.com/smart-city/index.html", "https://example.com/smart-city/assets/icons/"],
+  ]) {
+    assert.equal(new URL(known.querySelector(".place-visual__icon").getAttribute("src"), base).href, expectedPrefix + "lc-coffee.svg");
+    assert.equal(new URL(fallback.querySelector(".place-visual__icon").getAttribute("src"), base).href, expectedPrefix + "lc-map-pin.svg");
+  }
+  assert.match(known.querySelector(".place-visual__icon").getAttribute("alt"), /Иллюстрация категории: Кафе/);
+  assert.match(known.textContent, /Иллюстрация категории/);
 });

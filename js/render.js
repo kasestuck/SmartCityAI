@@ -70,7 +70,18 @@
   function categoryInfo(value) {
     const found = CFG.CATEGORIES.find((c) => c.value === value);
     if (found) return { value, icon: found.icon, label: t(`cat_${value}`), chip: t(`chip_${value}`) };
-    return { value: value || "other", label: isPresent(value) ? value : t("cat_other"), chip: value, icon: "lc-map-pin.svg" };
+    return { value: "other", label: t("cat_other"), chip: t("cat_other"), icon: "lc-map-pin.svg" };
+  }
+
+  // Technical references are identifiers, not human-facing place names.
+  // Keep real brands with digits (Qazaq24, Z-1, А8).
+  function placeName(place) {
+    const name = typeof place.name === "string" ? place.name.trim() : "";
+    const normalized = name.normalize("NFKC").replace(/[\u2010-\u2015\u2212]/g, "-");
+    const explicitId = /^(?:(?:osm[_:\/\s-]?)?(?:node|way|relation)[_:\/\s-]?\d+|(?:id|ref|osm)\s*[_:=\/\s-]\s*\d+)$/i;
+    const modelCode = /^\p{L}{1,4}(?:\s*[-_\/]\s*)?\d+(?:\s*[-_\/]\s*\d+)+$/u;
+    return !/\p{L}/u.test(name) || explicitId.test(normalized) || modelCode.test(normalized)
+      ? t("place_name_unknown") : name;
   }
 
   // Google Карты: передаём только координаты места, не пользователя.
@@ -99,11 +110,15 @@
     const cat = categoryInfo(place.category);
     return el(
       "div",
-      { class: "place-visual", attrs: { "data-category": cat.value, "aria-hidden": "true" } },
+      { class: "place-visual", attrs: { "data-category": cat.value } },
       badge && ["gemini", "fallback_template"].includes(place.generated_by)
         ? el("span", { class: "badge-ai" }, icon("sparkles-12.svg", 12), t(place.generated_by === "gemini" ? "ai_tip" : "template_tip"))
         : null,
-      icon(cat.icon, 40, "place-visual__icon"),
+      el("img", {
+        class: "place-visual__icon",
+        attrs: { src: ICONS + cat.icon, width: 72, height: 72, alt: t("category_illustration", { category: cat.label }) },
+      }),
+      el("span", { class: "place-visual__caption", text: t("category_illustration_caption"), attrs: { "aria-hidden": "true" } }),
       index ? el("span", { class: "place-visual__num", text: String(index) }) : null
     );
   }
@@ -167,7 +182,7 @@
         el(
           "h3",
           { class: "place-card__name", attrs: { id: `place-name-${place.id}` } },
-          el("a", { attrs: { href: `#/place/${encodeURIComponent(place.id)}` }, text: place.name })
+          el("a", { attrs: { href: `#/place/${encodeURIComponent(place.id)}` }, text: placeName(place) })
         ),
         meta ? el("p", { class: "place-card__meta", text: meta }) : null
       ),
@@ -193,7 +208,7 @@
             "a",
             { class: "btn btn--secondary", attrs: { href: `#/map/${encodeURIComponent(place.id)}` } },
             t("on_map"),
-            el("span", { class: "visually-hidden", text: `: ${place.name}` })
+            el("span", { class: "visually-hidden", text: `: ${placeName(place)}` })
           )
         );
       }
@@ -202,7 +217,7 @@
           "btn btn--primary",
           routeUrl(place),
           t("route"),
-          t("route_sr", { name: place.name }),
+          t("route_sr", { name: placeName(place) }),
           "navigation-white.svg"
         )
       );
@@ -232,7 +247,7 @@
       el(
         "span",
         { class: "place-mini__text" },
-        el("span", { class: "place-mini__name" }, el("span", { class: "visually-hidden", text: `${index}. ` }), place.name),
+        el("span", { class: "place-mini__name" }, el("span", { class: "visually-hidden", text: `${index}. ` }), placeName(place)),
         el("span", { class: "place-card__category", text: cat.label }),
         meta ? el("span", { class: "place-card__meta", text: meta }) : null
       )
@@ -287,6 +302,7 @@
     pluralPlaces,
     categoryInfo,
     metaLine,
+    placeName,
     placeUrl,
     routeUrl,
     externalLink,

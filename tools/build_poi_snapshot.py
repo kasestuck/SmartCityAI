@@ -16,8 +16,13 @@ import sys
 import time
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
+
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from backend.services.poi_names import meaningful_name  # noqa: E402
 
 # Основной сервер и зеркало: Overpass иногда отвечает 502/504.
 OVERPASS_URLS = (
@@ -44,20 +49,14 @@ def build_query() -> str:
     return f"[out:json][timeout:90];({selections});out center tags;"
 
 
-def first_text(tags: dict, *keys: str) -> str | None:
-    for key in keys:
-        value = (tags.get(key) or "").strip()
-        if value:
-            return value
-    return None
-
-
 def download() -> dict:
     body = urllib.parse.urlencode({"data": build_query()}).encode()
     last_error: Exception | None = None
     for attempt in range(ATTEMPTS):
         for url in OVERPASS_URLS:
-            request = urllib.request.Request(url, data=body, headers={"User-Agent": "SmartCityAI-frontend-snapshot/1.0"})
+            request = urllib.request.Request(
+                url, data=body, headers={"User-Agent": "SmartCityAI-frontend-snapshot/1.0"}
+            )
             try:
                 with urllib.request.urlopen(request, timeout=120) as response:
                     payload = json.load(response)
@@ -76,7 +75,7 @@ def main() -> int:
     places, seen = [], set()
     for element in payload.get("elements", []):
         tags = element.get("tags") or {}
-        name = first_text(tags, "name", "name:ru", "name:kk", "name:en")
+        name = meaningful_name(tags)
         category = next((v for k, v in CATEGORY_RULES if tags.get(k) == v), None)
         lat = element.get("lat", (element.get("center") or {}).get("lat"))
         lon = element.get("lon", (element.get("center") or {}).get("lon"))
@@ -95,7 +94,7 @@ def main() -> int:
             {
                 "source": "OpenStreetMap",
                 "license": "ODbL — © OpenStreetMap contributors",
-                "collected_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+                "collected_at": datetime.now(UTC).replace(microsecond=0).isoformat(),
                 "fields": ["id", "name", "latitude", "longitude", "category"],
                 "places": places,
             },

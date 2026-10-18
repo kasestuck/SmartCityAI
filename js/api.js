@@ -60,6 +60,12 @@
     return typeof v === "number" && Number.isFinite(v);
   }
 
+  function localIllustration(category, value) {
+    const icon = CFG.CATEGORIES.find((c) => c.value === category)?.icon || "lc-map-pin.svg";
+    const path = "/assets/icons/" + icon;
+    return value === path ? path : null;
+  }
+
   // Оставляем только элементы, которые можно безопасно показать.
   function sanitizeRecommendations(list) {
     if (!Array.isArray(list)) return null;
@@ -72,6 +78,7 @@
         latitude: isFiniteNumber(r.latitude) && Math.abs(r.latitude) <= 90 ? r.latitude : null,
         longitude: isFiniteNumber(r.longitude) && Math.abs(r.longitude) <= 180 ? r.longitude : null,
         category: typeof r.category === "string" ? r.category : null,
+        image_url: localIllustration(r.category, r.image_url),
         description: typeof r.description === "string" ? r.description : null,
         reason: typeof r.reason === "string" ? r.reason : null,
         distance_meters: isFiniteNumber(r.distance_meters) && r.distance_meters >= 0 ? r.distance_meters : null,
@@ -110,6 +117,7 @@
   function recommendationResult(body, recommendations, degraded = false) {
     return {
       recommendations,
+      has_more: body.has_more === true,
       degraded: degraded || recommendations.some((r) => r.generated_by === "fallback_template"),
       language: ["ru", "kk"].includes(body.language) ? body.language : null,
       query_context: sanitizeQueryContext(body.query_context),
@@ -129,7 +137,7 @@
 
   /**
    * POST /api/recommendations.
-   * @returns {Promise<{recommendations: Array, degraded: boolean, language: string|null, query_context: object|null}>}
+   * @returns {Promise<{recommendations: Array, has_more: boolean, degraded: boolean, language: string|null, query_context: object|null}>}
    */
   async function getRecommendations(payload) {
     const response = await send("/api/recommendations", {

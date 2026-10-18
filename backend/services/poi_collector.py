@@ -18,6 +18,7 @@ from urllib.request import Request, urlopen
 from backend.config import Settings
 from backend.database.db import Database
 from backend.database.models import POI
+from backend.services.poi_names import meaningful_name
 
 # First matching rule wins; keep this order stable when tags overlap.
 CATEGORY_RULES = (
@@ -73,7 +74,7 @@ def normalize_element(element: dict, collected_at: str, source: str) -> POI | No
         return None
     if not isinstance(tags, dict):
         return None
-    name = _text(tags, "name", "name:ru", "name:kk", "name:en")
+    name = meaningful_name(tags)
     category = next((value for key, value in CATEGORY_RULES if tags.get(key) == value), None)
     coordinates = element if osm_type == "node" else element.get("center", {})
     if not isinstance(coordinates, dict):

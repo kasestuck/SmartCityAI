@@ -279,7 +279,10 @@
 
   // Заготовленные пояснения русскоязычные; язык интерфейса их не переводит.
   function responseWithMetadata(body, payload) {
+    const excluded = new Set(Array.isArray(payload.exclude_ids) ? payload.exclude_ids : []);
+    const available = body.recommendations.filter((place) => !excluded.has(place.id));
     return {
+      has_more: available.length > window.APP_CONFIG.MAX_RESULTS,
       language: "ru",
       query_context: {
         latitude: payload.latitude,
@@ -288,8 +291,9 @@
         duration_minutes: payload.duration_minutes,
         transport: payload.transport,
       },
-      recommendations: body.recommendations.map((place) => ({
+      recommendations: available.slice(0, window.APP_CONFIG.MAX_RESULTS).map((place) => ({
         ...place,
+        image_url: "/assets/icons/" + (window.APP_CONFIG.CATEGORIES.find((cat) => cat.value === place.category)?.icon || "lc-map-pin.svg"),
         generated_by: "fallback_template",
         status_note: "Часы работы не подтверждены",
         is_open_now: null,
@@ -363,6 +367,16 @@
       default: {
         const needs = Array.isArray(payload.accessibility) ? payload.accessibility : [];
         let body = needs.includes("wheelchair") ? RESPONSES.accessible : RESPONSES[pickResponse(payload)];
+        // Start with the relevant scenario, then continue through the same local fixture pool.
+        const seen = new Set();
+        const candidates = [...body.recommendations, ...Object.values(RESPONSES).flatMap((response) => response.recommendations)];
+        body = { recommendations: candidates.filter((place) => {
+          if (seen.has(place.id)) return false;
+          seen.add(place.id);
+          if (payload.categories?.length && !payload.categories.includes(place.category)) return false;
+          if (needs.includes("wheelchair") && !["yes", "limited"].includes(place.wheelchair)) return false;
+          return true;
+        }) };
         // «Трудно ходить далеко»: только места ближе 1 км.
         if (needs.includes("low_mobility")) {
           body = { recommendations: body.recommendations.filter((r) => r.distance_meters <= 1000) };

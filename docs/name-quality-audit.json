@@ -1,0 +1,83 @@
+{
+  "audited_at": "2026-10-18T16:10:15.276332+00:00",
+  "policy": {
+    "choice": "skip_without_meaningful_name",
+    "name_sources": [
+      "name",
+      "name:ru",
+      "name:kk",
+      "name:en"
+    ],
+    "technical_name_rule": "Whole-name numeric/punctuation, explicit OSM/ref/id, or short letter prefix with multiple numeric groups.",
+    "brand_policy": "Keep names with words/digits and ambiguous short brands such as Z-1 and А8.",
+    "raw_source_policy": "Preserve original cache tags; use a SQLite backup before cleanup."
+  },
+  "database": {
+    "path": "backend\\data\\poi.sqlite3",
+    "total": 602,
+    "missing_name_tag_count": 0,
+    "stored_name_not_in_name_tags_count": 0,
+    "excluded_count": 1,
+    "excluded_percent": 0.1661,
+    "renamed_count": 0,
+    "usable_count": 601,
+    "affected_places": [
+      {
+        "id": "osm_node_4209560711",
+        "stored_name": "Т34-85",
+        "safe_name": null,
+        "name_tags": {
+          "name": "Т34-85"
+        },
+        "reference_tags": {},
+        "action": "skip"
+      }
+    ]
+  },
+  "cache": {
+    "path": "backend\\cache\\overpass.json",
+    "total": 1069,
+    "missing_name_tag_count": 467,
+    "missing_name_tag_percent": 43.6857,
+    "technical_name_count": 1,
+    "usable_name_count": 601,
+    "technical_places": [
+      {
+        "id": "osm_node_4209560711",
+        "name_tags": {
+          "name": "Т34-85"
+        }
+      }
+    ]
+  },
+  "snapshot": {
+    "path": "data\\poi-astana.json",
+    "total": 602,
+    "excluded_count": 1,
+    "excluded_percent": 0.1661,
+    "usable_count": 601,
+    "affected_places": [
+      {
+        "id": "osm_node_4209560711",
+        "stored_name": "Т34-85"
+      }
+    ]
+  },
+  "decision_reason": "Only 1 of 602 stored places (0.1661%) lacks a meaningful name; skip it instead of adding a placeholder-name flag. The 467 raw nameless cache elements were already excluded by the collector.",
+  "provenance": "The original Overpass cache and SQLite tags both contain name=Т34-85 and historic=tank. No ref or identifier fallback created this name.",
+  "cleanup": {
+    "database_before": 602,
+    "database_after": 601,
+    "snapshot_before": 602,
+    "snapshot_after": 601,
+    "removed_ids": [
+      "osm_node_4209560711"
+    ],
+    "database_backup": "backend/data/poi-before-name-cleanup.sqlite3",
+    "backup_integrity": "ok",
+    "remaining_excluded_database": 0,
+    "remaining_excluded_snapshot": 0,
+    "original_cache_unchanged": true,
+    "cache_sha256": "5d8b60b95680f8ee6b0ba76a07bc5602dba50d032bd1a2c4f908e903b3037d8e"
+  }
+}

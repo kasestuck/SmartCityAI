@@ -6,7 +6,7 @@
   "use strict";
 
   // Адрес бекенда (FastAPI). Меняется только здесь.
-  const API_BASE_URL = "http://localhost:8000";
+  const API_BASE_URL = "http://localhost:8001";
 
   // true — работать на js/mock-data.js без бекенда.
   // Можно не править файл: ?mock=1 в адресе страницы включает mock,

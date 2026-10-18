@@ -12,18 +12,18 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="css/variables.css?v=202610181816">
   <link rel="stylesheet" href="css/base.css?v=202610181816">
-  <link rel="stylesheet" href="css/components.css?v=202610181816">
+  <link rel="stylesheet" href="css/components.css?v=20261018-more">
   <script src="js/config.js?v=20261018-main" defer></script>
-  <script src="js/i18n.js?v=20261018-main" defer></script>
-  <script src="js/mock-data.js?v=20261018-main" defer></script>
-  <script src="js/api.js?v=20261018-main" defer></script>
-  <script src="js/render.js?v=20261018-main" defer></script>
+  <script src="js/i18n.js?v=20261018-more" defer></script>
+  <script src="js/mock-data.js?v=20261018-more" defer></script>
+  <script src="js/api.js?v=20261018-more" defer></script>
+  <script src="js/render.js?v=20261018-more" defer></script>
   <script src="js/gmap.js?v=202610181816" defer></script>
   <script src="js/pickmap.js?v=202610181816" defer></script>
   <script src="js/placesmap.js?v=202610181816" defer></script>
-  <script src="js/poi.js?v=202610181816" defer></script>
+  <script src="js/poi.js?v=20261018-more" defer></script>
   <script src="js/widgets.js?v=202610181816" defer></script>
-  <script src="js/main.js?v=20261018-main" defer></script>
+  <script src="js/main.js?v=20261018-more" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main" data-i18n="skip">Перейти к содержанию</a>
@@ -328,6 +328,10 @@
           <div id="results-live" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
           <div id="results-state"></div>
           <div class="place-list" id="place-list"></div>
+          <div class="load-more-controls" id="load-more-controls" hidden>
+            <button class="btn btn--secondary" id="load-more" type="button" aria-controls="place-list" data-i18n="load_more">Показать ещё</button>
+            <p class="t-small" id="load-more-status" hidden></p>
+          </div>
           <p class="t-caption" id="results-note" data-i18n="results_note" hidden>Расстояние указано по прямой, время — приблизительный бюджет на дорогу и посещение. Места, часы и описания — из OpenStreetMap; объяснения сформулированы ИИ или по шаблону. Уточняйте детали перед посещением. Данные © OpenStreetMap contributors.</p>
         </section>
       </div>

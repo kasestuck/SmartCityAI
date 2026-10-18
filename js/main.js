@@ -27,6 +27,10 @@
     lastNeeds: [],
     selectedId: null,
     inFlight: false,
+    searchVersion: 0,
+    hasMore: false,
+    moreInFlight: false,
+    moreError: null,
     rateLimitUntil: 0,
     rateTimer: null,
     pendingPick: null,
@@ -506,18 +510,28 @@
     $("submit-label").textContent = submitLabel();
     document.querySelectorAll("#scenario-list button").forEach((b) => (b.disabled = busy || isRateLimited()));
     dom.results.setAttribute("aria-busy", String(busy));
+    renderLoadMore();
   }
 
   async function runSearch(payload) {
     if (state.inFlight || isRateLimited()) return;
+    const version = ++state.searchVersion;
     state.inFlight = true;
-    state.lastPayload = payload;
+    state.hasMore = false;
+    state.moreInFlight = false;
+    state.moreError = null;
+    // Later form or language edits must not alter this search's continuation.
+    state.lastPayload = Object.freeze(Object.fromEntries(Object.entries(payload).map(([key, value]) =>
+      [key, Array.isArray(value) ? Object.freeze([...value]) : value]
+    )));
     setBusy(true);
     state.screen = { type: "loading" };
     renderScreen();
     try {
-      const { recommendations, degraded, language, query_context } = await window.Api.getRecommendations(payload);
-      state.results = recommendations;
+      const { recommendations, degraded, language, query_context, has_more } = await window.Api.getRecommendations(state.lastPayload);
+      if (version !== state.searchVersion) return;
+      state.results = unseenRecommendations(recommendations);
+      state.hasMore = has_more && state.results.length > 0;
       state.degraded = degraded;
       state.responseLanguage = language || (CFG.USE_MOCK ? "ru" : payload.language || "ru");
       state.queryContext = query_context;
@@ -526,14 +540,77 @@
       state.selectedId = recommendations.length ? recommendations[0].id : null;
       state.screen = { type: "results" };
     } catch (err) {
+      if (version !== state.searchVersion) return;
       state.results = [];
       state.selectedId = null;
       state.screen = { type: "error", err: err instanceof window.Api.ApiError ? err : new window.Api.ApiError("unknown") };
     } finally {
-      state.inFlight = false;
-      setBusy(false);
+      if (version === state.searchVersion) {
+        state.inFlight = false;
+        setBusy(false);
+      }
     }
     renderScreen({ announceIt: true });
+  }
+
+  function unseenRecommendations(recommendations, previous = []) {
+    const seen = new Set(previous.map((place) => place.id));
+    return recommendations.filter((place) => {
+      if (seen.has(place.id)) return false;
+      seen.add(place.id);
+      return true;
+    }).slice(0, CFG.MAX_RESULTS);
+  }
+
+  async function loadMore() {
+    if (!state.lastPayload || !state.hasMore || state.moreInFlight || state.inFlight || isRateLimited()) return;
+    const version = state.searchVersion;
+    const previousCount = state.results.length;
+    state.moreInFlight = true;
+    state.moreError = null;
+    renderLoadMore();
+    dom.results.setAttribute("aria-busy", "true");
+    announce(t("loading_more"));
+    try {
+      const payload = { ...state.lastPayload, exclude_ids: state.results.map((place) => place.id) };
+      const result = await window.Api.getRecommendations(payload);
+      if (version !== state.searchVersion) return;
+      const added = unseenRecommendations(result.recommendations, state.results);
+      state.results.push(...added);
+      state.hasMore = result.has_more && added.length > 0;
+      state.degraded = state.degraded || result.degraded;
+      renderResults(false, previousCount);
+      announce(added.length ? t("more_added", { n: added.length }) : t("more_exhausted"));
+    } catch (err) {
+      if (version !== state.searchVersion) return;
+      state.moreError = err instanceof window.Api.ApiError ? err : new window.Api.ApiError("unknown");
+      if (state.moreError.kind === "rate_limited") startRateLimit();
+      announce(t("more_error"));
+    } finally {
+      if (version === state.searchVersion) {
+        state.moreInFlight = false;
+        dom.results.setAttribute("aria-busy", "false");
+        renderLoadMore();
+      }
+    }
+  }
+
+  function renderLoadMore() {
+    const active = state.screen.type === "results" && state.results.length > 0;
+    const button = $("load-more");
+    $("load-more-controls").hidden = !active;
+    button.hidden = !active || !state.hasMore;
+    button.disabled = state.moreInFlight || state.inFlight || isRateLimited() || !state.hasMore;
+    button.setAttribute("aria-disabled", String(button.disabled));
+    button.classList.toggle("is-loading", state.moreInFlight);
+    button.textContent = isRateLimited()
+      ? t("wait_s", { s: Math.ceil((state.rateLimitUntil - Date.now()) / 1000) })
+      : t(state.moreInFlight ? "loading_more" : state.moreError ? "retry_more" : "load_more");
+    const status = $("load-more-status");
+    status.textContent = !active ? "" : state.moreError
+      ? t(isRateLimited() ? "err_rate_text" : "more_error")
+      : !state.hasMore ? t("more_exhausted") : "";
+    status.hidden = !status.textContent;
   }
 
   function startRateLimit() {
@@ -549,6 +626,7 @@
         return;
       }
       $("submit-label").textContent = submitLabel();
+      renderLoadMore();
     };
     tick();
     state.rateTimer = setInterval(tick, 1000);
@@ -602,6 +680,7 @@
     $("place-list").replaceChildren();
     $("results-note").hidden = true;
     $("results-aside").hidden = true;
+    renderLoadMore();
   }
 
   function scrollToResults() {
@@ -655,8 +734,8 @@
     return t("lang_results_notice", { language: t("lang_name_" + state.responseLanguage) });
   }
 
-  function renderResults(announceIt) {
-    const list = state.results.slice(0, CFG.MAX_RESULTS);
+  function renderResults(announceIt, appendFrom = null) {
+    const list = state.results;
     const n = list.length;
     $("results-state").replaceChildren();
 
@@ -703,8 +782,11 @@
     if (state.degraded) notes.append(notice(t("degraded_notice"), false));
 
     const askedWheelchair = state.lastNeeds.includes("wheelchair");
-    $("place-list").replaceChildren(...list.map((p, i) => R.placeCard(p, { index: i + 1, askedWheelchair })));
+    const cards = list.slice(appendFrom ?? 0).map((p, i) => R.placeCard(p, { index: (appendFrom ?? 0) + i + 1, askedWheelchair }));
+    if (appendFrom === null) $("place-list").replaceChildren(...cards);
+    else $("place-list").append(...cards);
     $("results-note").hidden = false;
+    renderLoadMore();
 
     const withCoords = list.filter(R.hasCoords);
     $("results-aside").hidden = withCoords.length === 0;
@@ -771,7 +853,7 @@
   /* ------------------------------------------------------------------ */
 
   function placeTitle(p) {
-    return t("gmap_place", { name: p.name });
+    return t("gmap_place", { name: R.placeName(p) });
   }
 
   function renderResultsMap() {
@@ -796,7 +878,7 @@
               },
             },
           },
-          `${state.results.indexOf(p) + 1}. ${p.name}`
+          `${state.results.indexOf(p) + 1}. ${R.placeName(p)}`
         )
       )
     );
@@ -833,7 +915,7 @@
     return {
       places: places.map((p) => ({
         id: p.id,
-        name: p.name,
+        name: R.placeName(p),
         lat: p.latitude,
         lon: p.longitude,
         iconName: R.categoryInfo(p.category).icon,
@@ -847,7 +929,7 @@
   }
 
   function mapPlaces() {
-    return state.results.slice(0, CFG.MAX_RESULTS).filter(R.hasCoords);
+    return state.results.filter(R.hasCoords);
   }
 
   // Правая колонка: выбранное место крупно, остальные — списком.
@@ -923,7 +1005,7 @@
   function poiPopup(p, center) {
     const box = el("div", { class: "pm-popup" },
       el("p", { class: "pm-popup__cat", text: R.categoryInfo(p.category).label }),
-      el("p", { class: "pm-popup__name", text: p.name })
+      el("p", { class: "pm-popup__name", text: R.placeName(p) })
     );
     if (center) {
       const d = R.formatDistance(window.Poi.haversine(center.lat, center.lon, p.lat, p.lon));
@@ -1072,7 +1154,7 @@
         "div",
         { class: "place-main__head" },
         el("p", { class: "place-main__category", text: cat.label }),
-        el("h1", { class: "place-main__name", text: place.name, attrs: { tabindex: "-1", "data-focus": "" } }),
+        el("h1", { class: "place-main__name", text: R.placeName(place), attrs: { tabindex: "-1", "data-focus": "" } }),
         tags.childElementCount ? tags : null,
         R.isPresent(place.description) ? el("p", { class: "t-body", text: place.description }) : null
       ),
@@ -1114,8 +1196,8 @@
       mapBox = el("div");
       aside.append(
         mapBox,
-        R.externalLink("btn btn--primary btn--block", R.routeUrl(place), t("build_route"), t("route_sr", { name: place.name }), "navigation-white.svg"),
-        R.externalLink("btn btn--secondary btn--block", R.placeUrl(place), t("open_gmaps"), t("open_gmaps_sr", { name: place.name }), null)
+        R.externalLink("btn btn--primary btn--block", R.routeUrl(place), t("build_route"), t("route_sr", { name: R.placeName(place) }), "navigation-white.svg"),
+        R.externalLink("btn btn--secondary btn--block", R.placeUrl(place), t("open_gmaps"), t("open_gmaps_sr", { name: R.placeName(place) }), null)
       );
     }
     aside.append(
@@ -1129,7 +1211,7 @@
       maps.detail = window.GMap.create(mapBox, { size: "detail" });
       maps.detail.show({ lat: place.latitude, lon: place.longitude, zoom: 16 }, placeTitle(place));
     }
-    document.title = t("title_place", { name: place.name });
+    document.title = t("title_place", { name: R.placeName(place) });
   }
 
   /* ------------------------------------------------------------------ */
@@ -1249,6 +1331,7 @@
     $("submit-label").textContent = submitLabel();
 
     $("category-options").addEventListener("change", onCategoryChange);
+    $("load-more").addEventListener("click", loadMore);
     document.querySelectorAll("[data-map-mode]").forEach((b) =>
       b.addEventListener("click", () => {
         state.mapMode = b.dataset.mapMode;

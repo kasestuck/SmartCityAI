@@ -23,4 +23,17 @@ def recommendations(
     generator: Annotated[GeminiClient, Depends(get_gemini)],
 ) -> RecommendationsResponse:
     candidates = search_poi(database, payload)
-    return build_recommendations(payload, candidates, generator)
+    result = build_recommendations(payload, candidates, generator)
+    if result.recommendations:
+        # Probe retrieval only: the shortlist is capped and a short-budget page may
+        # contain one result. Neither page length nor the Gemini response proves
+        # exhaustion. Do not make an additional model call for this check.
+        remaining = payload.model_copy(
+            update={
+                "exclude_ids": list(
+                    set(payload.exclude_ids) | {card.id for card in result.recommendations}
+                )
+            }
+        )
+        result.has_more = bool(search_poi(database, remaining, limit=1))
+    return result

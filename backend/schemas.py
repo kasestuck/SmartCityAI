@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 Latitude = Annotated[float, Field(ge=-90, le=90, allow_inf_nan=False)]
 Longitude = Annotated[float, Field(ge=-180, le=180, allow_inf_nan=False)]
+PlaceId = Annotated[str, Field(min_length=1, max_length=128)]
 
 
 class APIModel(BaseModel):
@@ -20,6 +21,7 @@ class RecommendationRequest(APIModel):
     transport: Literal["walking"]
     categories: list[str] = Field(default_factory=list)
     language: Literal["ru", "kk"] = "ru"
+    exclude_ids: list[PlaceId] = Field(default_factory=list, max_length=10000)
 
 
 class Recommendation(APIModel):
@@ -44,6 +46,7 @@ class Recommendation(APIModel):
     phone: str | None = None
     website: str | None = None
     wikidata: str | None = None
+    image_url: str | None = None
 
 
 class QueryContext(APIModel):
@@ -58,6 +61,7 @@ class RecommendationsResponse(APIModel):
     recommendations: Annotated[list[Recommendation], Field(max_length=3)]
     query_context: QueryContext
     language: Literal["ru", "kk"] = "ru"
+    has_more: bool = False
 
 
 class HealthResponse(APIModel):

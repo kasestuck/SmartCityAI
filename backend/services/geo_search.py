@@ -4,11 +4,12 @@ import json
 import math
 import re
 import sqlite3
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, replace
 
 from backend.database.db import Database
 from backend.database.models import POI
 from backend.schemas import RecommendationRequest
+from backend.services.poi_names import safe_display_name
 
 EARTH_RADIUS_METERS = 6_371_008.8
 WALKING_METERS_PER_MINUTE = 75
@@ -150,8 +151,16 @@ def search_poi(
     intent_categories = set(categories) if request.categories else _intent_categories(query_tokens)
     candidates = []
     fallback_candidates = []
+    excluded = set(request.exclude_ids)
     for row in rows:
+        if row["id"] in excluded:
+            continue
         poi = POI(**dict(row))
+        name = safe_display_name(poi.name, poi.tags_json)
+        if name is None:
+            continue
+        if name != poi.name:
+            poi = replace(poi, name=name)
         distance = haversine_meters(
             request.latitude,
             request.longitude,

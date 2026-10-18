@@ -135,6 +135,7 @@ def test_model_selects_order_but_response_facts_come_from_candidates(
         "phone": None,
         "website": None,
         "wikidata": None,
+        "image_url": "/assets/icons/lc-landmark.svg",
     }
 
 
@@ -213,6 +214,7 @@ def test_empty_shortlist_skips_model(recommendation_request):
     assert build_recommendations(recommendation_request, [], MustNotGenerate()).model_dump() == {
         "recommendations": [],
         "language": "ru",
+        "has_more": False,
         "query_context": {
             "latitude": 51.1,
             "longitude": 71.4,

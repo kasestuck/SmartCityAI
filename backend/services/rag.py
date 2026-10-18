@@ -32,6 +32,15 @@ _CLAIM = re.compile(
     r"выставк|exhibit|\bevents?\b|событи|мероприяти",
     re.IGNORECASE,
 )
+_CATEGORY_ICONS = {
+    "cafe": "lc-coffee.svg",
+    "restaurant": "lc-utensils.svg",
+    "park": "lc-trees.svg",
+    "museum": "lc-landmark.svg",
+    "attraction": "lc-camera.svg",
+    "viewpoint": "lc-binoculars.svg",
+    "playground": "lc-baby.svg",
+}
 _CATEGORY_LABELS = {
     "cafe": "кафе",
     "restaurant": "ресторан",
@@ -198,8 +207,12 @@ def build_recommendations(
                 phone=poi.phone,
                 website=poi.website,
                 wikidata=poi.wikidata,
+                image_url=f"/assets/icons/{_CATEGORY_ICONS.get(poi.category, 'lc-map-pin.svg')}",
             )
         )
     return RecommendationsResponse(
-        recommendations=cards, query_context=context, language=request.language
+        recommendations=cards,
+        query_context=context,
+        language=request.language,
+        has_more=len(by_id) > len(cards),
     )
