@@ -30,6 +30,7 @@
     pendingPick: null,
     screen: { type: "intro" }, // intro | loading | results | error
     health: "checking",
+    mapMode: null, // city | around; null — выбрать автоматически
   };
 
   const maps = { home: null, results: null, big: null, detail: null, pick: null };
@@ -786,30 +787,59 @@
     );
   }
 
-  const bigMapOverlay = {};
+  // Экран «Карта»: все места подборки на одной карте (Leaflet + OSM).
+  const bigMap = { api: null, loading: null, failed: false, key: null, poiKey: null };
 
   function ensureBigMap() {
-    if (maps.big) return;
-    const container = $("big-map");
-    bigMapOverlay.badge = el("span", { class: "badge-soft gmap__badge" });
-    container.append(bigMapOverlay.badge);
-    maps.big = window.GMap.create(container, { size: "large" });
+    if (bigMap.api || bigMap.failed) return Promise.resolve(bigMap.api);
+    if (!bigMap.loading) {
+      bigMap.loading = window.PlacesMap.create($("big-map"), {
+        t,
+        onSelect: (id) => selectOnMap(id, { fromMap: true }),
+      })
+        .then((api) => (bigMap.api = api))
+        .catch(() => {
+          bigMap.failed = true;
+          $("big-map").replaceChildren(el("p", { class: "t-small pickmap__error", text: t("pick_map_error") }));
+          return null;
+        });
+    }
+    return bigMap.loading;
   }
 
-  function selectOnMap(id) {
+  function selectOnMap(id, { fromMap = false } = {}) {
     state.selectedId = id;
     history.replaceState(null, "", `#/map/${encodeURIComponent(id)}`);
-    renderMapView(id);
+    renderMapSide(id);
+    if (bigMap.api) bigMap.api.select(id, { pan: !fromMap });
   }
 
-  function renderMapView(id) {
-    ensureBigMap();
-    const side = $("map-side-list");
-    const places = state.results.slice(0, CFG.MAX_RESULTS).filter(R.hasCoords);
+  function mapData(places, selectedId) {
+    return {
+      places: places.map((p) => ({
+        id: p.id,
+        name: p.name,
+        lat: p.latitude,
+        lon: p.longitude,
+        iconName: R.categoryInfo(p.category).icon,
+        category: R.categoryInfo(p.category).label,
+        meta: R.metaLine(p),
+      })),
+      start: state.searchOrigin,
+      selectedId,
+      landmarks: CFG.LANDMARKS.map((lm) => ({ name: t(`lm_${lm.key}`), lat: lm.lat, lon: lm.lon })),
+    };
+  }
 
+  function mapPlaces() {
+    return state.results.slice(0, CFG.MAX_RESULTS).filter(R.hasCoords);
+  }
+
+  // Правая колонка: выбранное место крупно, остальные — списком.
+  function renderMapSide(id) {
+    const side = $("map-side-list");
+    const places = mapPlaces();
     if (!places.length) {
-      maps.big.show({ query: "Астана", zoom: 12 }, t("gmap_astana"));
-      bigMapOverlay.badge.hidden = true;
       side.replaceChildren(
         R.stateCard({
           iconName: "search-x.svg",
@@ -818,19 +848,11 @@
           actions: [el("a", { class: "btn btn--primary btn--block", attrs: { href: "#/guide" } }, t("find"))],
         })
       );
-      return;
+      return null;
     }
-
     const selected = places.find((p) => p.id === id) || places.find((p) => p.id === state.selectedId) || places[0];
     state.selectedId = selected.id;
     const index = state.results.indexOf(selected) + 1;
-    maps.big.show({ lat: selected.latitude, lon: selected.longitude, zoom: 16 }, placeTitle(selected));
-    bigMapOverlay.badge.hidden = false;
-    bigMapOverlay.badge.replaceChildren(
-      R.icon("sparkles-12.svg", 12),
-      t("map_badge", { i: index, n: places.length, name: selected.name })
-    );
-
     const askedWheelchair = state.lastNeeds.includes("wheelchair");
     side.replaceChildren(
       R.placeCard(selected, { index, selected: true, compactActions: true, askedWheelchair }),
@@ -838,6 +860,129 @@
         .filter((p) => p !== selected)
         .map((p) => R.placeMini(p, { index: state.results.indexOf(p) + 1, onSelect: (pid) => selectOnMap(pid) }))
     );
+    return selected;
+  }
+
+  async function renderMapView(id) {
+    const selected = renderMapSide(id);
+    const api = await ensureBigMap();
+    if (!api) return;
+    const places = mapPlaces();
+    // Перерисовываем метки, только если изменилась сама подборка, точка или язык.
+    const key = JSON.stringify([places.map((p) => p.id), state.searchOrigin, I.lang]);
+    if (key !== bigMap.key) {
+      bigMap.key = key;
+      bigMap.poiKey = null; // метки пересозданы — слой и вид тоже
+      api.show(mapData(places, selected ? selected.id : null));
+    } else {
+      api.resize();
+      if (selected) api.select(selected.id, { pan: false });
+    }
+    await updatePoiLayer();
+  }
+
+  /* Слой «все места»: вкладки «Вся карта» / «Вокруг» */
+
+  function mapCenter() {
+    return state.searchOrigin || (state.location ? { lat: state.location.lat, lon: state.location.lon } : null);
+  }
+
+  function currentMapMode() {
+    const center = mapCenter();
+    const mode = state.mapMode || (center ? "around" : "city");
+    return mode === "around" && !center ? "city" : mode;
+  }
+
+  // Точки вокруг круга радиуса — чтобы карта вписала его целиком.
+  function circleBounds(c, r) {
+    const dLat = r / 111320;
+    const dLon = r / (111320 * Math.cos((c.lat * Math.PI) / 180));
+    return [
+      [c.lat - dLat, c.lon - dLon],
+      [c.lat + dLat, c.lon + dLon],
+    ];
+  }
+
+  function poiPopup(p, center) {
+    const box = el("div", { class: "pm-popup" },
+      el("p", { class: "pm-popup__cat", text: R.categoryInfo(p.category).label }),
+      el("p", { class: "pm-popup__name", text: p.name })
+    );
+    if (center) {
+      const d = R.formatDistance(window.Poi.haversine(center.lat, center.lon, p.lat, p.lon));
+      box.append(el("p", { class: "pm-popup__meta", text: t("meta_dist", { d }) }));
+    }
+    box.append(
+      el("a", {
+        class: "pm-popup__link",
+        text: t("route"),
+        attrs: { href: window.GMap.routeUrl(p.lat, p.lon), target: "_blank", rel: "noopener noreferrer" },
+      })
+    );
+    return box;
+  }
+
+  function renderMapLegend() {
+    const colors = window.PlacesMap.CATEGORY_COLORS;
+    const item = (swatch, text) => el("li", {}, swatch, text);
+    $("map-legend").replaceChildren(
+      item(el("span", { class: "map-legend__pick", text: "1" }), t("legend_pick")),
+      ...CFG.CATEGORIES.map((c) =>
+        item(el("span", { class: "map-legend__dot", attrs: { style: `background:${colors[c.value]}` } }), R.categoryInfo(c.value).chip)
+      ),
+      item(el("span", { class: "map-legend__dot map-legend__dot--landmark" }), t("legend_landmark"))
+    );
+  }
+
+  async function updatePoiLayer({ force = false } = {}) {
+    const api = bigMap.api;
+    if (!api) return;
+    const center = mapCenter();
+    const mode = currentMapMode();
+    document.querySelectorAll("[data-map-mode]").forEach((b) => {
+      b.setAttribute("aria-pressed", String(b.dataset.mapMode === mode));
+      if (b.dataset.mapMode === "around") {
+        b.disabled = !center;
+        b.title = center ? "" : t("map_around_need_point");
+      }
+    });
+    renderMapLegend();
+
+    const key = JSON.stringify([mode, center, I.lang, bigMap.key]);
+    if (!force && key === bigMap.poiKey) return;
+    bigMap.poiKey = key;
+
+    let data;
+    try {
+      data = await window.Poi.loadAll();
+    } catch {
+      $("map-count").textContent = t("map_poi_error");
+      return;
+    }
+    const radius = CFG.AROUND_RADIUS_M;
+    let points;
+    let fitTo;
+    if (mode === "around") {
+      points = window.Poi.around(data.places, center, radius);
+      fitTo = circleBounds(center, radius); // «вокруг» — вид строго по кругу
+      $("map-count").textContent = t("map_count_around", { n: points.length, places: I.places(points.length), r: R.formatDistance(radius) });
+    } else {
+      points = data.places;
+      fitTo = points.map((p) => [p.lat, p.lon]);
+      const src = data.source === "api"
+        ? t("map_src_api")
+        : t("map_src_snapshot", { date: data.collectedAt ? new Date(data.collectedAt).toLocaleDateString(I.lang === "en" ? "en-GB" : "ru-RU") : "—" });
+      $("map-count").textContent =
+        t("map_count_city", { n: points.length, places: I.places(points.length), src }) +
+        (center ? "" : ` ${t("map_around_need_point")}`);
+    }
+    api.setPoi({
+      points,
+      circle: mode === "around" ? { lat: center.lat, lon: center.lon, radius } : null,
+      fitTo,
+      describe: (p) => poiPopup(p, center),
+    });
+    if (!center && mode === "around") $("map-count").textContent = t("map_around_need_point");
   }
 
   /* ------------------------------------------------------------------ */
@@ -1083,6 +1228,12 @@
     $("submit-label").textContent = submitLabel();
 
     $("category-options").addEventListener("change", onCategoryChange);
+    document.querySelectorAll("[data-map-mode]").forEach((b) =>
+      b.addEventListener("click", () => {
+        state.mapMode = b.dataset.mapMode;
+        updatePoiLayer({ force: true });
+      })
+    );
     document.querySelectorAll("[data-lang]").forEach((btn) => btn.addEventListener("click", () => I.set(btn.dataset.lang)));
     I.onChange(onLanguageChange);
 

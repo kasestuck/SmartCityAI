@@ -112,5 +112,6 @@
     return api;
   }
 
-  window.PickMap = Object.freeze({ create });
+  // loadLeaflet, TILES, ATTRIBUTION и meIcon переиспользует карта мест (js/placesmap.js).
+  window.PickMap = Object.freeze({ create, loadLeaflet, TILES, ATTRIBUTION, meIcon });
 })();

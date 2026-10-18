@@ -362,9 +362,9 @@
       "Straight-line distance and time are approximate; check details before you go.",
     ],
     map_caption: [
-      "Расстояния приблизительные. Карта © Google, места — из OpenStreetMap.",
-      "Қашықтықтар шамамен алынған. Карта © Google, орындар — OpenStreetMap-тен.",
-      "Distances are approximate. Map © Google, places from OpenStreetMap.",
+      "Расстояния приблизительные. Карта © OpenStreetMap contributors; серые точки — ориентиры Астаны.",
+      "Қашықтықтар шамамен алынған. Карта © OpenStreetMap contributors; сұр нүктелер — Астана бағдарлары.",
+      "Distances are approximate. Map © OpenStreetMap contributors; grey dots are Astana landmarks.",
     ],
     map_empty_title: ["Пока здесь пусто", "Әзірге мұнда бос", "Nothing here yet"],
     map_empty_text: [
@@ -373,6 +373,24 @@
       "Tell the AI guide what you'd like — up to three recommendations will appear on the map.",
     ],
     map_badge: ["{i} из {n} · {name}", "{n} ішінен {i} · {name}", "{i} of {n} · {name}"],
+    details: ["Подробнее", "Толығырақ", "Details"],
+    map_mode_aria: ["Что показать на карте", "Картада не көрсету", "What to show on the map"],
+    map_mode_city: ["Вся карта", "Бүкіл карта", "Whole city"],
+    map_mode_around: ["Вокруг", "Айналада", "Nearby"],
+    map_count_city: ["{n} {places} на карте · {src}", "Картада {n} {places} · {src}", "{n} {places} on the map · {src}"],
+    map_count_around: ["{n} {places} в радиусе {r} от точки отправления", "Бастапқы нүктеден {r} радиуста {n} {places}", "{n} {places} within {r} of the starting point"],
+    map_src_snapshot: ["снимок OpenStreetMap от {date}", "OpenStreetMap суреті, {date}", "OpenStreetMap snapshot, {date}"],
+    map_src_api: ["данные сервера", "сервер деректері", "server data"],
+    map_around_need_point: [
+      "Чтобы показать места вокруг, выбери точку отправления в AI-гиде.",
+      "Айналадағы орындарды көрсету үшін AI-гидте бастапқы нүктені таңда.",
+      "To show places nearby, choose a starting point in the AI guide.",
+    ],
+    map_poi_error: ["Не удалось загрузить точки мест.", "Орын нүктелерін жүктеу мүмкін болмады.", "Couldn't load the places layer."],
+    map_legend_aria: ["Легенда карты", "Карта шартты белгілері", "Map legend"],
+    legend_pick: ["1–3 — твоя подборка", "1–3 — сенің таңдауың", "1–3 — your picks"],
+    legend_landmark: ["ориентиры", "бағдарлар", "landmarks"],
+    start_point: ["Точка отправления", "Бастапқы нүкте", "Starting point"],
 
     // Экран «Место»
     to_home: ["На главную", "Басты бетке", "Home"],

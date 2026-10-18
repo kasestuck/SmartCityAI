@@ -18,6 +18,8 @@
   // В mock-режиме они включены, чтобы показать поведение.
   const BACKEND_SUPPORTS_ACCESSIBILITY = false;
   const BACKEND_SUPPORTS_LANGUAGE = false;
+  // GET /api/poi — все места для слоя на экране «Карта». Пока нет — берём снимок OSM.
+  const BACKEND_SUPPORTS_POI = false;
 
   const params = new URLSearchParams(window.location.search);
   const mockParam = params.get("mock");
@@ -40,6 +42,7 @@
     FEATURES: Object.freeze({
       ACCESSIBILITY_FIELD: BACKEND_SUPPORTS_ACCESSIBILITY || mockScenario !== null,
       LANGUAGE_FIELD: BACKEND_SUPPORTS_LANGUAGE,
+      POI_ENDPOINT: BACKEND_SUPPORTS_POI && mockScenario === null,
     }),
 
     REQUEST_TIMEOUT_MS: 15000,
@@ -82,6 +85,11 @@
     ]),
 
     OSM_COPYRIGHT_URL: "https://www.openstreetmap.org/copyright",
+
+    // Слой «все места» на экране «Карта».
+    POI_SNAPSHOT_URL: "data/poi-astana.json",
+    POI_LIMIT: 1000,
+    AROUND_RADIUS_M: 1500,
 
     // Карта выбора точки: стартовый вид и ориентиры (координаты приблизительные).
     MAP_DEFAULT_CENTER: Object.freeze({ lat: 51.128, lon: 71.43 }),

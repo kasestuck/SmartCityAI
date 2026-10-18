@@ -10,18 +10,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="css/variables.css?v=202610181749">
-  <link rel="stylesheet" href="css/base.css?v=202610181749">
-  <link rel="stylesheet" href="css/components.css?v=202610181751">
-  <script src="js/config.js?v=202610181749" defer></script>
-  <script src="js/i18n.js?v=202610181750" defer></script>
-  <script src="js/mock-data.js?v=202610181749" defer></script>
-  <script src="js/api.js?v=202610181749" defer></script>
-  <script src="js/render.js?v=202610181749" defer></script>
-  <script src="js/gmap.js?v=202610181749" defer></script>
-  <script src="js/pickmap.js?v=202610181749" defer></script>
-  <script src="js/widgets.js?v=202610181749" defer></script>
-  <script src="js/main.js?v=202610181749" defer></script>
+  <link rel="stylesheet" href="css/variables.css?v=202610181816">
+  <link rel="stylesheet" href="css/base.css?v=202610181816">
+  <link rel="stylesheet" href="css/components.css?v=202610181816">
+  <script src="js/config.js?v=202610181816" defer></script>
+  <script src="js/i18n.js?v=202610181816" defer></script>
+  <script src="js/mock-data.js?v=202610181816" defer></script>
+  <script src="js/api.js?v=202610181816" defer></script>
+  <script src="js/render.js?v=202610181816" defer></script>
+  <script src="js/gmap.js?v=202610181816" defer></script>
+  <script src="js/pickmap.js?v=202610181816" defer></script>
+  <script src="js/placesmap.js?v=202610181816" defer></script>
+  <script src="js/poi.js?v=202610181816" defer></script>
+  <script src="js/widgets.js?v=202610181816" defer></script>
+  <script src="js/main.js?v=202610181818" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main" data-i18n="skip">Перейти к содержанию</a>
@@ -338,14 +340,24 @@
         <p class="t-body" data-i18n="map_lead">Выбирай место, смотри детали и планируй прогулку.</p>
       </div>
       <div class="map-layout">
-        <div id="big-map"></div>
+        <div class="map-main">
+          <div class="map-toolbar">
+            <div class="seg" role="group" aria-label="Что показать на карте" data-i18n-aria-label="map_mode_aria">
+              <button type="button" data-map-mode="city" aria-pressed="false" data-i18n="map_mode_city">Вся карта</button>
+              <button type="button" data-map-mode="around" aria-pressed="false" data-i18n="map_mode_around">Вокруг</button>
+            </div>
+            <p class="t-small map-count" id="map-count" role="status"></p>
+          </div>
+          <div id="big-map"></div>
+          <ul class="map-legend" id="map-legend" aria-label="Легенда карты" data-i18n-aria-label="map_legend_aria"></ul>
+        </div>
         <aside class="map-side" aria-labelledby="map-side-title">
           <h2 class="t-h3" id="map-side-title" data-i18n="your_pick">Твоя подборка</h2>
           <div id="map-side-list" class="map-side"></div>
           <p class="t-caption" data-i18n="map_side_note">Расстояние по прямой и время приблизительные; уточняйте детали перед посещением.</p>
         </aside>
       </div>
-      <p class="t-caption" data-i18n="map_caption">Расстояния приблизительные. Карта © Google, места — из OpenStreetMap.</p>
+      <p class="t-caption" data-i18n="map_caption">Расстояния приблизительные. Карта © OpenStreetMap contributors; серые точки — ориентиры Астаны.</p>
     </div>
 
     <!-- ========== Место ========== -->
