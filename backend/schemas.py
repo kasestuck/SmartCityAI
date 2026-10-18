@@ -19,6 +19,7 @@ class RecommendationRequest(APIModel):
     duration_minutes: Annotated[int, Field(ge=15, le=240)]
     transport: Literal["walking"]
     categories: list[str] = Field(default_factory=list)
+    language: Literal["ru", "kk"] = "ru"
 
 
 class Recommendation(APIModel):
@@ -36,6 +37,13 @@ class Recommendation(APIModel):
     source: str
     status_note: str | None
     generated_by: Literal["gemini", "fallback_template"]
+    is_open_now: bool | None = None
+    budget_warning: str | None = None
+    wheelchair: str | None = None
+    accessibility: str | None = None
+    phone: str | None = None
+    website: str | None = None
+    wikidata: str | None = None
 
 
 class QueryContext(APIModel):
@@ -49,6 +57,7 @@ class QueryContext(APIModel):
 class RecommendationsResponse(APIModel):
     recommendations: Annotated[list[Recommendation], Field(max_length=3)]
     query_context: QueryContext
+    language: Literal["ru", "kk"] = "ru"
 
 
 class HealthResponse(APIModel):

@@ -90,6 +90,134 @@ def test_upsert_updates_osm_identity_and_is_transactional(tmp_path):
     assert stored(database)[0]["name"] == "Updated"
 
 
+def test_upsert_saves_updates_and_clears_optional_enrichment(tmp_path):
+    database = Database(tmp_path / "poi.sqlite3")
+    database.initialize()
+    poi = replace(
+        sample_poi(),
+        wheelchair="yes",
+        phone="+7 7172 123456",
+        website="https://example.org/place",
+        wikidata="Q123",
+    )
+    assert database.upsert_pois([poi]) == 1
+    first = stored(database)[0]
+    assert (first["wheelchair"], first["phone"], first["website"], first["wikidata"]) == (
+        "yes",
+        "+7 7172 123456",
+        "https://example.org/place",
+        "Q123",
+    )
+
+    assert (
+        database.upsert_pois(
+            [replace(poi, wheelchair="limited", phone=None, website=None, wikidata="Q456")]
+        )
+        == 1
+    )
+    rows = stored(database)
+    assert len(rows) == 1
+    assert (rows[0]["wheelchair"], rows[0]["phone"], rows[0]["website"], rows[0]["wikidata"]) == (
+        "limited",
+        None,
+        None,
+        "Q456",
+    )
+
+
+@pytest.mark.parametrize("wheelchair", ["yes", "no", "limited", "unknown"])
+def test_normalizes_enrichment_without_guessing_or_changing_raw_tags(wheelchair):
+    from backend.services.poi_collector import normalize_element
+
+    raw = element(
+        wheelchair=f" {wheelchair} ",
+        phone=" +7 7172 123456 ",
+        website=" https://example.org/place ",
+        wikidata=" Q123 ",
+    )
+    poi = normalize_element(raw, STAMP, "OpenStreetMap")
+    assert (poi.wheelchair, poi.phone, poi.website, poi.wikidata) == (
+        wheelchair,
+        "+7 7172 123456",
+        "https://example.org/place",
+        "Q123",
+    )
+    assert json.loads(poi.tags_json) == raw["tags"]
+
+
+@pytest.mark.parametrize("value", [None, "", "   ", 123, False])
+def test_normalizes_missing_or_unusable_enrichment_as_none(value):
+    from backend.services.poi_collector import normalize_element
+
+    tags = (
+        {}
+        if value is None
+        else dict.fromkeys(("wheelchair", "phone", "website", "wikidata"), value)
+    )
+    poi = normalize_element(element(**tags), STAMP, "OpenStreetMap")
+    assert (poi.wheelchair, poi.phone, poi.website, poi.wikidata) == (None, None, None, None)
+
+
+@pytest.mark.parametrize("direct", [None, "", "  ", "direct"])
+def test_contact_enrichment_falls_back_only_when_primary_tag_is_missing(direct):
+    from backend.services.poi_collector import normalize_element
+
+    tags = {"contact:phone": "+7 7172 654321", "contact:website": "https://contact.example"}
+    if direct is not None:
+        tags.update(phone=direct, website=direct)
+    poi = normalize_element(element(**tags), STAMP, "OpenStreetMap")
+    expected = (
+        ("direct", "direct")
+        if direct == "direct"
+        else ("+7 7172 654321", "https://contact.example")
+    )
+    assert (poi.phone, poi.website) == expected
+
+
+def test_cli_collects_fixture_enrichment_into_new_database(tmp_path, monkeypatch, capsys):
+    from backend.scripts import collect_poi as cli
+    from backend.services import poi_collector as collector
+
+    settings = settings_for(tmp_path)
+    raw = payload(
+        [
+            element(
+                wheelchair="limited",
+                phone="+7 7172 123456",
+                website="https://example.org/place",
+                wikidata="Q123",
+            ),
+            element(2, "way"),
+        ]
+    )
+    monkeypatch.setattr(cli, "Settings", lambda: settings)
+    monkeypatch.setattr(collector, "utc_now", lambda: datetime.fromisoformat(STAMP))
+    monkeypatch.setattr(collector, "download_overpass", lambda *_: raw)
+
+    assert not settings.database_path.exists()
+    assert cli.main(["--force"]) == 0
+
+    rows = stored(Database(settings.database_path))
+    assert len(rows) == 2
+    assert rows[0]["id"] == "osm_node_1"
+    assert (rows[0]["wheelchair"], rows[0]["phone"], rows[0]["website"], rows[0]["wikidata"]) == (
+        "limited",
+        "+7 7172 123456",
+        "https://example.org/place",
+        "Q123",
+    )
+    assert rows[0]["source"] == "OpenStreetMap"
+    assert rows[0]["collected_at"] == STAMP
+    assert json.loads(rows[0]["tags_json"]) == raw["elements"][0]["tags"]
+    assert (rows[1]["wheelchair"], rows[1]["phone"], rows[1]["website"], rows[1]["wikidata"]) == (
+        None,
+        None,
+        None,
+        None,
+    )
+    assert "received=2 saved=2 skipped=0" in capsys.readouterr().out
+
+
 @pytest.mark.parametrize("osm_type", ["node", "way", "relation"])
 def test_normalizes_geometry_and_preserves_only_available_facts(osm_type):
     from backend.services.poi_collector import normalize_element

@@ -7,6 +7,7 @@ The prompt and id/schema validation cannot prove arbitrary prose factually corre
 from __future__ import annotations
 
 import re
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from backend.schemas import (
@@ -17,6 +18,7 @@ from backend.schemas import (
 )
 from backend.services.gemini import GeminiClient, GeminiUnavailable
 from backend.services.geo_search import VISIT_MINUTES
+from backend.services.opening_hours import evaluate_opening_hours
 
 if TYPE_CHECKING:
     from backend.services.geo_search import Candidate
@@ -48,6 +50,15 @@ _ACTIONS = {
     "viewpoint": "Рассмотреть посещение смотровой площадки; заранее уточнить условия доступа.",
     "playground": "Рассмотреть детскую площадку; взрослому заранее оценить условия на месте.",
 }
+_CATEGORY_LABELS_KK = {
+    "cafe": "кафе",
+    "restaurant": "мейрамхана",
+    "park": "саябақ",
+    "museum": "мұражай",
+    "attraction": "көрікті жер",
+    "viewpoint": "шолу алаңы",
+    "playground": "балалар алаңы",
+}
 
 
 def _valid_text(value: object) -> bool:
@@ -59,7 +70,15 @@ def _valid_text(value: object) -> bool:
     )
 
 
-def _fallback(candidate: Candidate) -> tuple[str, str]:
+def _fallback(candidate: Candidate, language: str = "ru") -> tuple[str, str]:
+    if language == "kk":
+        category = _CATEGORY_LABELS_KK.get(candidate.poi.category, "орын")
+        return (
+            f"Санат: {category}. Түзу сызық бойынша шамамен {candidate.distance_meters:.0f} м; "
+            f"жол мен баруға шамамен {candidate.estimated_duration_minutes} минут қажет. "
+            "Басқа тілектерге сәйкестігі расталмаған; жұмыс уақыты мен шарттарын нақтылаңыз.",
+            f"Бару нұсқасы: {category}. Алдын ала жұмыс уақыты мен бару шарттарын нақтылаңыз.",
+        )
     category = _CATEGORY_LABELS.get(candidate.poi.category, "место")
     reason = (
         f"Категория: {category}. Примерно {candidate.distance_meters:.0f} м по прямой; "
@@ -78,6 +97,7 @@ def build_recommendations(
     candidates: list[Candidate],
     generator: GeminiClient | None = None,
 ) -> RecommendationsResponse:
+    requested_at = datetime.now(UTC)
     context = QueryContext(
         latitude=round(request.latitude, 3),
         longitude=round(request.longitude, 3),
@@ -86,7 +106,9 @@ def build_recommendations(
         transport=request.transport,
     )
     if not candidates:
-        return RecommendationsResponse(recommendations=[], query_context=context)
+        return RecommendationsResponse(
+            recommendations=[], query_context=context, language=request.language
+        )
     # Retrieval, including any database errors, happens outside this service.
     by_id = {}
     for candidate in candidates:
@@ -131,7 +153,28 @@ def build_recommendations(
     for identity in selected:
         candidate = by_id[identity]
         poi = candidate.poi
-        reason, action = explanations.get(identity, _fallback(candidate))
+        reason, action = explanations.get(identity, _fallback(candidate, request.language))
+        is_open_now = evaluate_opening_hours(poi.opening_hours, now=requested_at)
+        if request.language == "kk":
+            status_note = (
+                "Жұмыс уақыты расталмаған"
+                if is_open_now is None
+                else "OpenStreetMap кестесі бойынша; барар алдында нақты жұмыс уақытын анықтаңыз."
+            )
+        else:
+            status_note = (
+                "Часы работы не подтверждены"
+                if is_open_now is None
+                else "По расписанию OpenStreetMap; фактические часы работы уточните перед визитом."
+            )
+        overrun = candidate.estimated_duration_minutes - request.duration_minutes
+        budget_warning = None
+        if overrun > 0:
+            budget_warning = (
+                f"Уақыт бюджетіңізден {overrun} минутқа асады"
+                if request.language == "kk"
+                else f"Превышает ваш бюджет на {overrun} минут"
+            )
         cards.append(
             Recommendation(
                 id=poi.id,
@@ -146,8 +189,17 @@ def build_recommendations(
                 suggested_action=action,
                 opening_hours=poi.opening_hours,
                 source=poi.source,
-                status_note="Часы работы не подтверждены" if poi.opening_hours is None else None,
+                status_note=status_note,
                 generated_by="gemini" if identity in explanations else "fallback_template",
+                is_open_now=is_open_now,
+                budget_warning=budget_warning,
+                wheelchair=poi.wheelchair,
+                accessibility=poi.wheelchair,
+                phone=poi.phone,
+                website=poi.website,
+                wikidata=poi.wikidata,
             )
         )
-    return RecommendationsResponse(recommendations=cards, query_context=context)
+    return RecommendationsResponse(
+        recommendations=cards, query_context=context, language=request.language
+    )

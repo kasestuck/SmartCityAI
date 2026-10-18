@@ -134,10 +134,9 @@ def search_poi(
     available_walking_minutes = request.duration_minutes - min(
         VISIT_MINUTES[category] for category in categories
     )
-    if available_walking_minutes < 0:
-        return []
-    radius = available_walking_minutes * WALKING_METERS_PER_MINUTE / WALKING_DISTANCE_FACTOR
-    clause, parameters = _bounding_box(request.latitude, request.longitude, radius)
+    radius = max(0, available_walking_minutes) * WALKING_METERS_PER_MINUTE / WALKING_DISTANCE_FACTOR
+    fallback_radius = request.duration_minutes * WALKING_METERS_PER_MINUTE / WALKING_DISTANCE_FACTOR
+    clause, parameters = _bounding_box(request.latitude, request.longitude, fallback_radius)
     clause += f" AND category IN ({', '.join('?' for _ in categories)})"
     parameters.extend(categories)
     columns = ", ".join(field.name for field in fields(POI))
@@ -150,6 +149,7 @@ def search_poi(
     query_tokens = _tokens(request.query)
     intent_categories = set(categories) if request.categories else _intent_categories(query_tokens)
     candidates = []
+    fallback_candidates = []
     for row in rows:
         poi = POI(**dict(row))
         distance = haversine_meters(
@@ -158,10 +158,10 @@ def search_poi(
             poi.latitude,
             poi.longitude,
         )
+        if distance > fallback_radius:
+            continue
         duration = math.ceil(distance * WALKING_DISTANCE_FACTOR / WALKING_METERS_PER_MINUTE)
         duration += VISIT_MINUTES[poi.category]
-        if duration > request.duration_minutes:
-            continue
         place_tokens = _tokens(
             " ".join(
                 (
@@ -175,7 +175,23 @@ def search_poi(
         category_score = float(poi.category in intent_categories)
         proximity_score = max(0, 1 - distance / radius) if radius else float(distance == 0)
         score = 0.5 * category_score + 0.3 * text_score + 0.2 * proximity_score
-        candidates.append(Candidate(poi, distance, duration, score))
+        candidate = Candidate(poi, distance, duration, score)
+        if duration <= request.duration_minutes:
+            candidates.append(candidate)
+        elif not intent_categories or poi.category in intent_categories:
+            fallback_candidates.append(candidate)
+    if not candidates and fallback_candidates:
+        # Keep the full visit estimate, but offer only a place within the walking budget.
+        return [
+            min(
+                fallback_candidates,
+                key=lambda candidate: (
+                    candidate.estimated_duration_minutes,
+                    candidate.distance_meters,
+                    candidate.poi.id,
+                ),
+            )
+        ]
     candidates.sort(
         key=lambda candidate: (
             -candidate.score,

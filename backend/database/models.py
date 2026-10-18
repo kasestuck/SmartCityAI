@@ -17,3 +17,7 @@ class POI:
     source: str
     collected_at: str
     tags_json: str
+    wheelchair: str | None = None
+    phone: str | None = None
+    website: str | None = None
+    wikidata: str | None = None

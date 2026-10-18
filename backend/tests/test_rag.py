@@ -128,6 +128,13 @@ def test_model_selects_order_but_response_facts_come_from_candidates(
         "source": "OpenStreetMap",
         "status_note": "Часы работы не подтверждены",
         "generated_by": "gemini",
+        "is_open_now": None,
+        "budget_warning": None,
+        "wheelchair": None,
+        "accessibility": None,
+        "phone": None,
+        "website": None,
+        "wikidata": None,
     }
 
 
@@ -205,6 +212,7 @@ def test_empty_shortlist_skips_model(recommendation_request):
 
     assert build_recommendations(recommendation_request, [], MustNotGenerate()).model_dump() == {
         "recommendations": [],
+        "language": "ru",
         "query_context": {
             "latitude": 51.1,
             "longitude": 71.4,
@@ -350,3 +358,24 @@ def test_generated_text_and_fallback_have_distinct_provenance(recommendation_req
     assert second.generated_by == "fallback_template"
     assert first.source == second.source == "OpenStreetMap"
     assert first.estimated_duration_minutes == second.estimated_duration_minutes == 30
+
+
+@pytest.mark.parametrize(
+    ("language", "warning"),
+    [("ru", "Превышает ваш бюджет на 15 минут"), ("kk", "Уақыт бюджетіңізден 15 минутқа асады")],
+)
+def test_budget_warning_is_present_even_with_accepted_ai_text(
+    recommendation_request, candidates, language, warning
+):
+    request = recommendation_request.model_copy(
+        update={"duration_minutes": 15, "language": language}
+    )
+    result = build_recommendations(
+        request,
+        candidates[:1],
+        generator({"recommendations": [item("osm_node_1")]}),
+    )
+    card = result.recommendations[0]
+    assert card.generated_by == "gemini"
+    assert card.budget_warning == warning
+    assert card.estimated_duration_minutes == 30

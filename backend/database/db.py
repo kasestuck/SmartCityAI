@@ -22,6 +22,10 @@ CREATE TABLE IF NOT EXISTS poi (
     source TEXT NOT NULL,
     collected_at TEXT NOT NULL,
     tags_json TEXT NOT NULL,
+    wheelchair TEXT,
+    phone TEXT,
+    website TEXT,
+    wikidata TEXT,
     UNIQUE (osm_type, osm_id)
 );
 CREATE INDEX IF NOT EXISTS idx_poi_geography ON poi (latitude, longitude);
@@ -49,6 +53,10 @@ class Database:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connection() as connection:
             connection.executescript(SCHEMA)
+            columns = {row[1] for row in connection.execute("PRAGMA table_info(poi)")}
+            for column in ("wheelchair", "phone", "website", "wikidata"):
+                if column not in columns:
+                    connection.execute(f"ALTER TABLE poi ADD COLUMN {column} TEXT")
 
     def check_health(self) -> None:
         with self.connection(readonly=True) as connection:
@@ -59,14 +67,16 @@ class Database:
         statement = """
             INSERT INTO poi (
                 id, osm_type, osm_id, name, latitude, longitude, category,
-                description, opening_hours, source, collected_at, tags_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                description, opening_hours, source, collected_at, tags_json,
+                wheelchair, phone, website, wikidata
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(osm_type, osm_id) DO UPDATE SET
                 id=excluded.id, name=excluded.name, latitude=excluded.latitude,
                 longitude=excluded.longitude, category=excluded.category,
                 description=excluded.description, opening_hours=excluded.opening_hours,
                 source=excluded.source, collected_at=excluded.collected_at,
-                tags_json=excluded.tags_json
+                tags_json=excluded.tags_json, wheelchair=excluded.wheelchair,
+                phone=excluded.phone, website=excluded.website, wikidata=excluded.wikidata
         """
         saved = 0
         with self.connection() as connection:

@@ -1,4 +1,6 @@
 fastapi>=0.115,<1
+opening-hours-py>=2.1.4,<3
 pydantic>=2.10,<3
 pydantic-settings>=2.6,<3
+tzdata>=2024.1,<2027
 uvicorn>=0.30,<1

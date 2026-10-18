@@ -10,6 +10,7 @@ httpcore2==2.13.1
 httpx2==2.13.1
 idna==3.20
 iniconfig==2.3.1
+opening-hours-py==2.1.4
 opentelemetry-api==1.45.1
 packaging==26.3
 pluggy==1.7.0
@@ -24,4 +25,5 @@ starlette==1.8.0
 truststore==0.10.5
 typing-inspection==0.4.4
 typing_extensions==4.16.0
+tzdata==2026.5
 uvicorn==0.54.0

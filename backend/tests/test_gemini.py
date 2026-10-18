@@ -136,6 +136,40 @@ def test_missing_key_does_not_call_network(recommendation_request, candidates, k
         )
 
 
+@pytest.mark.parametrize(("language", "instruction"), [("ru", "Russian"), ("kk", "Kazakh")])
+def test_requested_language_is_trusted_instruction(
+    recommendation_request, candidates, language, instruction
+):
+    sent = []
+
+    def transport(http_request, *, timeout):
+        sent.append(json.loads(http_request.data))
+        return response('{"recommendations": []}')
+
+    request = recommendation_request.model_copy(update={"language": language})
+    GeminiClient(settings(), transport=transport).generate(request, candidates)
+    system = sent[0]["systemInstruction"]["parts"][0]["text"]
+    assert f"in {instruction}" in system
+    if language == "kk":
+        assert "in Russian" not in system
+    data = json.loads(sent[0]["contents"][0]["parts"][0]["text"])
+    assert data["language"] == language
+
+
+def test_prompt_explains_budget_overrun(recommendation_request, candidates):
+    sent = []
+
+    def transport(http_request, *, timeout):
+        sent.append(json.loads(http_request.data))
+        return response('{"recommendations": []}')
+
+    request = recommendation_request.model_copy(update={"duration_minutes": 15})
+    GeminiClient(settings(), transport=transport).generate(request, candidates)
+    data = json.loads(sent[0]["contents"][0]["parts"][0]["text"])
+    assert data["candidates"][0]["budget_overrun_minutes"] == 8
+    assert "exceeds" in sent[0]["systemInstruction"]["parts"][0]["text"]
+
+
 def test_empty_candidates_do_not_call_network(recommendation_request):
     def transport(*args, **kwargs):
         pytest.fail("empty candidates must not issue HTTP")

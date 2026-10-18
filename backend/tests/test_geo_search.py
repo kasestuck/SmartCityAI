@@ -116,17 +116,71 @@ def test_visit_time_is_category_specific(database, category, visit):
     insert(database, category=category)
     results = search(database)
     assert results[0].estimated_duration_minutes == visit
-    assert bool(search(database, duration_minutes=max(15, visit - 1))) == (visit <= 15)
+    short_budget_results = search(database, duration_minutes=max(15, visit - 1))
+    assert short_budget_results[0].estimated_duration_minutes == visit
 
 
-def test_walking_time_is_one_way_ceiling_and_filters_at_budget_boundary(database):
+def test_walking_time_is_one_way_ceiling_and_preserved_for_overbudget_fallback(database):
     insert(database, longitude=0.001, category="cafe")
-    assert search(database, duration_minutes=21) == []
+    assert search(database, duration_minutes=21)[0].estimated_duration_minutes == 22
     result = search(database, duration_minutes=22)[0]
     assert result.distance_meters == pytest.approx(111.195, abs=0.001)
     assert result.estimated_duration_minutes == 22
     with pytest.raises(FrozenInstanceError):
         result.score = 0
+
+
+def test_fifteen_minute_cafe_request_returns_one_nearby_place_with_full_duration(database):
+    insert(database, 1, category="cafe", longitude=0.003)
+    insert(database, 2, category="cafe", longitude=0.004)
+    insert(database, 3, category="viewpoint")
+
+    results = search(database, duration_minutes=15, categories=["cafe"])
+
+    assert [item.poi.id for item in results] == ["osm_node_1"]
+    assert results[0].estimated_duration_minutes == 26
+
+
+def test_overbudget_fallback_prefers_shortest_total_duration_then_distance_and_id(database):
+    insert(database, 1, category="museum")
+    insert(database, 2, category="cafe", longitude=0.001)
+    insert(database, 4, category="cafe", longitude=0.0009)
+    insert(database, 3, category="cafe", longitude=0.0009)
+
+    results = search(database, duration_minutes=15, categories=["cafe", "museum"])
+
+    assert [item.poi.id for item in results] == ["osm_node_3"]
+    assert results[0].estimated_duration_minutes == 22
+
+
+def test_overbudget_fallback_respects_query_intent_without_explicit_categories(database):
+    insert(database, 1, category="park")
+    insert(database, 2, category="cafe", longitude=0.001)
+
+    results = search(database, duration_minutes=15, query="Хочу кофе")
+
+    assert [item.poi.id for item in results] == ["osm_node_2"]
+
+
+@pytest.mark.parametrize("latitude,longitude", [(0, 0.0081), (0.006, 0.006), (20, 20)])
+def test_overbudget_fallback_excludes_places_beyond_walking_budget(database, latitude, longitude):
+    insert(database, category="cafe", latitude=latitude, longitude=longitude)
+
+    assert search(database, duration_minutes=15, categories=["cafe"]) == []
+
+
+def test_normal_fitting_list_keeps_original_ranking_scores_and_excludes_overbudget_places(
+    database,
+):
+    insert(database, 1, category="cafe", longitude=0.001)
+    insert(database, 2, category="cafe", longitude=0.002, name="coffee")
+    insert(database, 3, category="cafe", longitude=0.006, name="coffee")
+
+    results = search(database, duration_minutes=30, categories=["cafe"], query="coffee")
+
+    assert [item.poi.id for item in results] == ["osm_node_2", "osm_node_1"]
+    assert [item.estimated_duration_minutes for item in results] == [24, 22]
+    assert [item.score for item in results] == pytest.approx([0.922905, 0.661452], abs=0.000001)
 
 
 def test_radius_uses_haversine_after_sql_box_filter(database):

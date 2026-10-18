@@ -1,5 +1,7 @@
 """Endpoint integration uses an actual temporary SQLite and fake external AI."""
 
+from datetime import UTC, datetime
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -81,7 +83,96 @@ def test_api_honors_explicit_category_and_insufficient_time(application):
         response = client.post("/api/recommendations", json=body)
         assert [card["id"] for card in response.json()["recommendations"]] == ["osm_node_1"]
         body["duration_minutes"] = 15
-        assert client.post("/api/recommendations", json=body).json()["recommendations"] == []
+        short_response = client.post("/api/recommendations", json=body)
+        assert short_response.status_code == 200
+        cards = short_response.json()["recommendations"]
+        assert len(cards) == 1 and cards[0]["id"] == "osm_node_1"
+        assert cards[0]["estimated_duration_minutes"] == 21
+        assert cards[0]["budget_warning"] == "Превышает ваш бюджет на 6 минут"
+        assert response.json()["recommendations"][0]["budget_warning"] is None
+
+
+@pytest.mark.parametrize(
+    ("hours", "expected"),
+    [("Mo-Fr 09:00-18:00", False), ("24/7", True), (None, None), ("nonsense", None)],
+)
+def test_api_reports_osm_schedule_without_removing_closed_places(
+    application, monkeypatch, hours, expected
+):
+    class Clock:
+        @staticmethod
+        def now(tz):
+            return datetime(2026, 10, 18, 12, 0, tzinfo=UTC)
+
+    monkeypatch.setattr("backend.services.rag.datetime", Clock, raising=False)
+    with TestClient(application) as client:
+        populate(application.state.database)
+        with application.state.database.connection() as connection:
+            connection.execute("UPDATE poi SET opening_hours=? WHERE id='osm_node_1'", (hours,))
+        response = client.post("/api/recommendations", json=request_body(categories=["cafe"]))
+    assert response.status_code == 200
+    card = response.json()["recommendations"][0]
+    assert card["is_open_now"] is expected
+    assert card["opening_hours"] == hours
+    if expected is None:
+        assert card["status_note"] == "Часы работы не подтверждены"
+    else:
+        assert "OpenStreetMap" in card["status_note"]
+        assert "уточните" in card["status_note"]
+
+
+@pytest.mark.parametrize("wheelchair", ["yes", "no", "limited", None])
+def test_osm_enrichment_reaches_api_unchanged(application, wheelchair):
+    from backend.services.poi_collector import normalize_element
+
+    tags = {"name": "OSM кафе", "amenity": "cafe"}
+    if wheelchair is not None:
+        tags.update(
+            wheelchair=wheelchair,
+            phone="+7 7172 123456",
+            website="https://example.org",
+            wikidata="Q123",
+        )
+    poi = normalize_element(
+        {"type": "node", "id": 100, "lat": 51.09, "lon": 71.42, "tags": tags},
+        "2026-10-18T00:00:00Z",
+        "OpenStreetMap",
+    )
+    with TestClient(application) as client:
+        application.state.database.upsert_pois([poi])
+        response = client.post("/api/recommendations", json=request_body(categories=["cafe"]))
+    assert response.status_code == 200
+    card = response.json()["recommendations"][0]
+    assert card["wheelchair"] == wheelchair
+    assert card["accessibility"] == wheelchair
+    for field in ("phone", "website", "wikidata"):
+        assert card[field] == tags.get(field)
+
+
+def test_kazakh_request_works_with_localized_fallback(application):
+    with TestClient(application) as client:
+        populate(application.state.database)
+        response = client.post(
+            "/api/recommendations",
+            json=request_body(language="kk", query="Жақын жерде кофе", categories=["cafe"]),
+        )
+    assert response.status_code == 200
+    assert response.json()["language"] == "kk"
+    card = response.json()["recommendations"][0]
+    assert card["generated_by"] == "fallback_template"
+    assert "шамамен" in card["reason"]
+    assert card["status_note"] == "Жұмыс уақыты расталмаған"
+
+
+def test_default_language_and_empty_kazakh_result(application):
+    with TestClient(application) as client:
+        assert client.post("/api/recommendations", json=request_body()).json()["language"] == "ru"
+        result = client.post("/api/recommendations", json=request_body(language="kk"))
+        invalid = client.post("/api/recommendations", json=request_body(language="de"))
+    assert result.status_code == 200
+    assert result.json()["language"] == "kk"
+    assert result.json()["recommendations"] == []
+    assert invalid.status_code == 422
 
 
 def test_api_accepts_generated_text_for_allowed_id_and_keeps_poi_facts(application):

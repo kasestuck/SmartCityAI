@@ -103,6 +103,10 @@ def normalize_element(element: dict, collected_at: str, source: str) -> POI | No
         source=source,
         collected_at=collected_at,
         tags_json=json.dumps(tags, ensure_ascii=False, sort_keys=True),
+        wheelchair=_text(tags, "wheelchair"),
+        phone=_text(tags, "phone", "contact:phone"),
+        website=_text(tags, "website", "contact:website"),
+        wikidata=_text(tags, "wikidata"),
     )
 
 
