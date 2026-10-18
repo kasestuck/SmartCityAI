@@ -34,10 +34,21 @@ class Recommendation(APIModel):
     suggested_action: str
     opening_hours: str | None
     source: str
+    status_note: str | None
+    generated_by: Literal["gemini", "fallback_template"]
+
+
+class QueryContext(APIModel):
+    latitude: Latitude
+    longitude: Longitude
+    categories: list[str]
+    duration_minutes: Annotated[int, Field(ge=15, le=240)]
+    transport: Literal["walking"]
 
 
 class RecommendationsResponse(APIModel):
     recommendations: Annotated[list[Recommendation], Field(max_length=3)]
+    query_context: QueryContext
 
 
 class HealthResponse(APIModel):

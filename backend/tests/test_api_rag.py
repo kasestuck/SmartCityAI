@@ -51,6 +51,13 @@ def test_api_searches_real_database_and_falls_back_without_ai_key(application):
         populate(application.state.database)
         response = client.post("/api/recommendations", json=request_body())
     assert response.status_code == 200
+    assert response.json()["query_context"] == {
+        "latitude": 51.09,
+        "longitude": 71.42,
+        "categories": [],
+        "duration_minutes": 60,
+        "transport": "walking",
+    }
     cards = response.json()["recommendations"]
     assert len(cards) == 3
     assert len({card["id"] for card in cards}) == 3
@@ -60,6 +67,8 @@ def test_api_searches_real_database_and_falls_back_without_ai_key(application):
     for card in cards:
         assert card["source"] == "OpenStreetMap"
         assert card["description"] is None and card["opening_hours"] is None
+        assert card["status_note"] == "Часы работы не подтверждены"
+        assert card["generated_by"] == "fallback_template"
         assert card["reason"] and card["suggested_action"]
         assert 0 <= card["distance_meters"] < 500
         assert card["estimated_duration_minutes"] <= 60
@@ -72,7 +81,7 @@ def test_api_honors_explicit_category_and_insufficient_time(application):
         response = client.post("/api/recommendations", json=body)
         assert [card["id"] for card in response.json()["recommendations"]] == ["osm_node_1"]
         body["duration_minutes"] = 15
-        assert client.post("/api/recommendations", json=body).json() == {"recommendations": []}
+        assert client.post("/api/recommendations", json=body).json()["recommendations"] == []
 
 
 def test_api_accepts_generated_text_for_allowed_id_and_keeps_poi_facts(application):
@@ -97,6 +106,8 @@ def test_api_accepts_generated_text_for_allowed_id_and_keeps_poi_facts(applicati
     assert card["id"] == "osm_node_1" and card["name"] == "Тестовое кафе"
     assert card["latitude"] == 51.0901 and card["longitude"] == 71.42
     assert card["opening_hours"] is None and card["source"] == "OpenStreetMap"
+    assert card["status_note"] == "Часы работы не подтверждены"
+    assert card["generated_by"] == "gemini"
 
 
 @pytest.mark.parametrize("failure", [TimeoutError, RuntimeError])

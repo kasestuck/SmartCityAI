@@ -126,6 +126,8 @@ def test_model_selects_order_but_response_facts_come_from_candidates(
         "suggested_action": "Заглянуть по пути",
         "opening_hours": None,
         "source": "OpenStreetMap",
+        "status_note": "Часы работы не подтверждены",
+        "generated_by": "gemini",
     }
 
 
@@ -202,7 +204,14 @@ def test_empty_shortlist_skips_model(recommendation_request):
             pytest.fail("empty shortlist must not call Gemini")
 
     assert build_recommendations(recommendation_request, [], MustNotGenerate()).model_dump() == {
-        "recommendations": []
+        "recommendations": [],
+        "query_context": {
+            "latitude": 51.1,
+            "longitude": 71.4,
+            "categories": [],
+            "duration_minutes": 90,
+            "transport": "walking",
+        },
     }
 
 
@@ -302,3 +311,42 @@ def test_fallback_actions_are_category_appropriate(
     cards = build_recommendations(recommendation_request, [candidate]).recommendations
     assert cards[0].suggested_action == action
     assert cards[0].opening_hours is None
+
+
+@pytest.mark.parametrize(
+    "unsafe_reason",
+    [
+        "Место работает сейчас",
+        "Кафе сейчас работает",
+        "Сейчас закрыто",
+        "It is open today",
+        "Қазір ашық",
+        "Қазір жабық",
+    ],
+)
+def test_missing_hours_rejects_current_status_claim_and_explains_uncertainty(
+    recommendation_request, candidates, unsafe_reason
+):
+    result = build_recommendations(
+        recommendation_request,
+        candidates[:1],
+        generator({"recommendations": [item("osm_node_1", reason=unsafe_reason)]}),
+    )
+    card = result.recommendations[0]
+    assert card.reason != unsafe_reason
+    assert card.generated_by == "fallback_template"
+    assert card.status_note == "Часы работы не подтверждены"
+
+
+def test_generated_text_and_fallback_have_distinct_provenance(recommendation_request, candidates):
+    result = build_recommendations(
+        recommendation_request,
+        candidates[:2],
+        generator({"recommendations": [item("osm_node_1")]}),
+    )
+    first, second = result.recommendations
+    assert first.generated_by == "gemini"
+    assert first.reason == "Подходит для короткого отдыха"
+    assert second.generated_by == "fallback_template"
+    assert first.source == second.source == "OpenStreetMap"
+    assert first.estimated_duration_minutes == second.estimated_duration_minutes == 30

@@ -113,6 +113,8 @@ def test_structured_request_omits_coordinates_and_preserves_data_boundary(
     instruction = payload["systemInstruction"]["parts"][0]["text"]
     assert "untrusted data" in instruction
     assert "opening" in instruction
+    assert "opening_hours is null" in instruction
+    assert "open or closed now" in instruction
     config = payload["generationConfig"]
     assert config["responseMimeType"] == "application/json"
     schema = config["responseJsonSchema"]

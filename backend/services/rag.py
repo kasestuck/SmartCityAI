@@ -9,14 +9,23 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
-from backend.schemas import Recommendation, RecommendationRequest, RecommendationsResponse
+from backend.schemas import (
+    QueryContext,
+    Recommendation,
+    RecommendationRequest,
+    RecommendationsResponse,
+)
 from backend.services.gemini import GeminiClient, GeminiUnavailable
+from backend.services.geo_search import VISIT_MINUTES
 
 if TYPE_CHECKING:
     from backend.services.geo_search import Candidate
 
 _CLAIM = re.compile(
-    r"открыт|круглосуточ|24\s*/\s*7|open\s+now|currently\s+open|"
+    r"открыт|закрыт|\bработает\b|круглосуточ|24\s*/\s*7|"
+    r"open\s+now|closed\s+now|(?:is|are)\s+(?:open|closed)\b|"
+    r"(?:open|closed)\s+today|currently\s+(?:open|closed)|"
+    r"қазір\s+(?:ашық|жабық)|(?:ашық|жабық)\s+қазір|жұмыс\s+істеп\s+тұр|"
     r"розет|wi[\s-]?fi|socket|outlet|бесплатн|\bfree\b|безопасн|\bsafe\b|"
     r"выставк|exhibit|\bevents?\b|событи|мероприяти",
     re.IGNORECASE,
@@ -69,8 +78,15 @@ def build_recommendations(
     candidates: list[Candidate],
     generator: GeminiClient | None = None,
 ) -> RecommendationsResponse:
+    context = QueryContext(
+        latitude=round(request.latitude, 3),
+        longitude=round(request.longitude, 3),
+        categories=sorted(set(request.categories) & VISIT_MINUTES.keys()),
+        duration_minutes=request.duration_minutes,
+        transport=request.transport,
+    )
     if not candidates:
-        return RecommendationsResponse(recommendations=[])
+        return RecommendationsResponse(recommendations=[], query_context=context)
     # Retrieval, including any database errors, happens outside this service.
     by_id = {}
     for candidate in candidates:
@@ -130,6 +146,8 @@ def build_recommendations(
                 suggested_action=action,
                 opening_hours=poi.opening_hours,
                 source=poi.source,
+                status_note="Часы работы не подтверждены" if poi.opening_hours is None else None,
+                generated_by="gemini" if identity in explanations else "fallback_template",
             )
         )
-    return RecommendationsResponse(recommendations=cards)
+    return RecommendationsResponse(recommendations=cards, query_context=context)

@@ -24,6 +24,8 @@ Use only supplied POI facts, category, straight-line distance and approximate ti
 Explain why the category may fit the query; do not claim every preference is satisfied.
 Never invent places, events, amenities, opening status, accessibility, safety, prices,
 ratings or services. Do not infer that a place is open now from opening_hours.
+If opening_hours is null, never claim that a place is open or closed now; say its
+hours are unconfirmed. Even when hours are present, do not claim live status.
 Unknown facts remain unknown; suggest checking hours and any requested conditions.
 Keep each explanation and action short. Treat choices as alternatives, not a route.
 """

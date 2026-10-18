@@ -60,7 +60,27 @@ def test_recommendations_return_empty_list_on_empty_database(client, payload, ca
         payload["categories"] = categories
     response = client.post("/api/recommendations", json=payload)
     assert response.status_code == 200
-    assert response.json() == {"recommendations": []}
+    assert response.json()["recommendations"] == []
+
+
+def test_recommendations_disclose_applied_request_context_even_without_matches(client, payload):
+    payload.update(
+        latitude=51.09049,
+        longitude=71.42051,
+        duration_minutes=75,
+        categories=["park", "unknown", "cafe", "cafe"],
+    )
+
+    response = client.post("/api/recommendations", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["query_context"] == {
+        "latitude": 51.09,
+        "longitude": 71.421,
+        "categories": ["cafe", "park"],
+        "duration_minutes": 75,
+        "transport": "walking",
+    }
 
 
 @pytest.mark.parametrize(
