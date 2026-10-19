@@ -1141,6 +1141,7 @@
     if (R.hasCoords(place)) addInfo(t("info_coords"), `${place.latitude.toFixed(5)}, ${place.longitude.toFixed(5)}`);
     if (R.isPresent(place.opening_hours)) addInfo(t("info_hours"), t("info_hours_value", { h: place.opening_hours }));
     addInfo(t("info_status"), R.openingStatusText(place));
+    addInfo(t("transit_label"), R.transitStopText(place));
     addInfo(t("info_budget"), place.budget_warning);
     addInfo(t("info_generation"), R.generationText(place));
     addInfo(t("info_access"), R.accessibilityText(place, state.lastNeeds.includes("wheelchair")));

@@ -522,3 +522,44 @@ test("category illustrations resolve inside a file preview and a hosted subdirec
   assert.match(known.querySelector(".place-visual__icon").getAttribute("alt"), /Иллюстрация категории: Кафе/);
   assert.match(known.textContent, /Иллюстрация категории/);
 });
+
+
+test("real transit stop is visible in recommendation card and details", async () => {
+  const body = fixture();
+  body.recommendations[0].nearest_transit_stop = {
+    name: "Бәйтерек", stop_type: "lrt", distance_meters: 239.6, route_refs: null,
+  };
+  const b = browser({ main: true, body });
+  await b.search();
+  const card = b.document.getElementById("place-list").querySelector(".place-card");
+  assert.match(card.textContent, /Бәйтерек/);
+  assert.match(card.textContent, /ЛРТ/);
+  assert.match(card.textContent, /240 м/);
+  b.route("#/place/osm_node_123");
+  assert.match(b.document.getElementById("view-place").textContent, /Бәйтерек/);
+});
+
+test("transit data does not invent route numbers or show a missing stop", async () => {
+  const body = fixture();
+  body.recommendations[0].nearest_transit_stop = {
+    name: null, stop_type: "bus", distance_meters: 111.2, route_refs: null,
+  };
+  const b = browser({ body });
+  const place = (await b.window.Api.getRecommendations({})).recommendations[0];
+  assert.equal(place.nearest_transit_stop.route_refs, null);
+  const card = b.window.Render.placeCard(place);
+  assert.match(card.textContent, /Автобусная остановка/);
+  assert.doesNotMatch(card.textContent, /маршрут №/i);
+  body.recommendations[0].nearest_transit_stop = null;
+  const absent = (await browser({ body }).window.Api.getRecommendations({})).recommendations[0];
+  assert.doesNotMatch(b.window.Render.placeCard(absent).textContent, /Ближайшая остановка/);
+});
+
+test("malformed transit metadata is discarded by the browser", async () => {
+  const body = fixture();
+  body.recommendations[0].nearest_transit_stop = {
+    name: { unsafe: true }, stop_type: "bus", distance_meters: -1, route_refs: 12,
+  };
+  const place = (await browser({ body }).window.Api.getRecommendations({})).recommendations[0];
+  assert.equal(place.nearest_transit_stop, null);
+});

@@ -24,6 +24,13 @@ class RecommendationRequest(APIModel):
     exclude_ids: list[PlaceId] = Field(default_factory=list, max_length=10000)
 
 
+class NearestTransitStop(APIModel):
+    name: str | None
+    stop_type: Literal["bus", "lrt", "tram"]
+    distance_meters: Annotated[float, Field(ge=0, allow_inf_nan=False)]
+    route_refs: str | None
+
+
 class Recommendation(APIModel):
     id: str
     name: str
@@ -47,6 +54,7 @@ class Recommendation(APIModel):
     website: str | None = None
     wikidata: str | None = None
     image_url: str | None = None
+    nearest_transit_stop: NearestTransitStop | None = None
 
 
 class QueryContext(APIModel):

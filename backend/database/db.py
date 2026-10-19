@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from dataclasses import astuple
 from pathlib import Path
 
-from backend.database.models import POI
+from backend.database.models import POI, TransitStop
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS poi (
@@ -30,6 +30,16 @@ CREATE TABLE IF NOT EXISTS poi (
 );
 CREATE INDEX IF NOT EXISTS idx_poi_geography ON poi (latitude, longitude);
 CREATE INDEX IF NOT EXISTS idx_poi_category ON poi (category);
+CREATE TABLE IF NOT EXISTS transit_stops (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT,
+    latitude REAL NOT NULL CHECK (latitude BETWEEN -90 AND 90),
+    longitude REAL NOT NULL CHECK (longitude BETWEEN -180 AND 180),
+    stop_type TEXT NOT NULL CHECK (stop_type IN ('bus', 'lrt', 'tram')),
+    route_refs TEXT,
+    collected_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_transit_geography ON transit_stops (latitude, longitude);
 """
 
 
@@ -82,5 +92,23 @@ class Database:
         with self.connection() as connection:
             for poi in pois:
                 connection.execute(statement, astuple(poi))
+                saved += 1
+        return saved
+
+    def upsert_transit_stops(self, stops: Iterable[TransitStop]) -> int:
+        """Update stop identities in one transaction without modifying POI."""
+        statement = """
+            INSERT INTO transit_stops (
+                id, name, latitude, longitude, stop_type, route_refs, collected_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                name=excluded.name, latitude=excluded.latitude,
+                longitude=excluded.longitude, stop_type=excluded.stop_type,
+                route_refs=excluded.route_refs, collected_at=excluded.collected_at
+        """
+        saved = 0
+        with self.connection() as connection:
+            for stop in stops:
+                connection.execute(statement, astuple(stop))
                 saved += 1
         return saved

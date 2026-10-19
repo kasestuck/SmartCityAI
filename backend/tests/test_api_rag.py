@@ -56,16 +56,14 @@ def test_api_searches_real_database_and_falls_back_without_ai_key(application):
     assert response.json()["query_context"] == {
         "latitude": 51.09,
         "longitude": 71.42,
-        "categories": [],
+        "categories": ["cafe", "park"],
         "duration_minutes": 60,
         "transport": "walking",
     }
     cards = response.json()["recommendations"]
-    assert len(cards) == 3
-    assert len({card["id"] for card in cards}) == 3
-    assert all(
-        card["id"] in {"osm_node_1", "osm_node_2", "osm_node_3", "osm_node_4"} for card in cards
-    )
+    assert len(cards) == 2
+    assert {card["id"] for card in cards} == {"osm_node_1", "osm_node_2"}
+    assert {card["category"] for card in cards} == {"cafe", "park"}
     for card in cards:
         assert card["source"] == "OpenStreetMap"
         assert card["description"] is None and card["opening_hours"] is None
@@ -212,7 +210,9 @@ def test_ai_failure_does_not_turn_valid_poi_into_error_response(application, fai
         populate(application.state.database)
         response = client.post("/api/recommendations", json=request_body())
     assert response.status_code == 200
-    assert len(response.json()["recommendations"]) == 3
+    cards = response.json()["recommendations"]
+    assert len(cards) == 2
+    assert {card["category"] for card in cards} == {"cafe", "park"}
     assert "private-key" not in caplog.text + response.text
 
 
@@ -234,5 +234,7 @@ def test_hallucinated_model_id_is_not_returned(application):
         populate(application.state.database)
         response = client.post("/api/recommendations", json=request_body())
     assert response.status_code == 200
-    assert len(response.json()["recommendations"]) == 3
+    cards = response.json()["recommendations"]
+    assert len(cards) == 2
+    assert {card["category"] for card in cards} == {"cafe", "park"}
     assert "invented" not in response.text

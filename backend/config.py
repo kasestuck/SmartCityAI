@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     overpass_attempts: int = Field(default=3, ge=1, le=5)
     overpass_retry_delay_seconds: float = Field(default=2, ge=0, le=30, allow_inf_nan=False)
     poi_cache_path: Path = BACKEND_DIR / "cache" / "overpass.json"
+    transit_cache_path: Path = BACKEND_DIR / "cache" / "transit-overpass.json"
     poi_cache_ttl_seconds: int = Field(default=86400, ge=0)
     gemini_api_key: SecretStr = SecretStr("")
     gemini_model: str = Field(
@@ -29,7 +30,7 @@ class Settings(BaseSettings):
     )
     gemini_timeout_seconds: float = Field(default=8, gt=0, le=30, allow_inf_nan=False)
 
-    @field_validator("database_path", "poi_cache_path", mode="after")
+    @field_validator("database_path", "poi_cache_path", "transit_cache_path", mode="after")
     @classmethod
     def resolve_database_path(cls, value: Path) -> Path:
         if not value.is_absolute():

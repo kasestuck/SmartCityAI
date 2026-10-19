@@ -1,0 +1,199 @@
+{
+  "checked_at": "2026-10-19",
+  "source": "OpenStreetMap via configured Overpass API",
+  "bbox": [
+    50.95,
+    71.2,
+    51.3,
+    71.75
+  ],
+  "received_elements": 1478,
+  "request_elapsed_seconds": 94.94,
+  "tag_counts": {
+    "public_transport": {
+      "stop_position": 366,
+      "<absent>": 340,
+      "platform": 730,
+      "station": 42
+    },
+    "highway": {
+      "<absent>": 513,
+      "bus_stop": 965
+    },
+    "railway": {
+      "<absent>": 1297,
+      "stop": 46,
+      "station": 40,
+      "halt": 3,
+      "platform": 41,
+      "light_rail": 51
+    },
+    "station": {
+      "<absent>": 1440,
+      "light_rail": 38
+    },
+    "light_rail": {
+      "<absent>": 1406,
+      "yes": 72
+    },
+    "bus": {
+      "yes": 1011,
+      "<absent>": 467
+    },
+    "tram": {
+      "<absent>": 1478
+    },
+    "construction": {
+      "<absent>": 1478
+    }
+  },
+  "tag_coverage": {
+    "name": 691,
+    "name:ru": 235,
+    "name:kk": 106,
+    "route_ref": 10,
+    "network": 113,
+    "operator": 147,
+    "ref": 71,
+    "bus": 1011,
+    "light_rail": 72,
+    "railway": 181,
+    "construction": 0,
+    "disused": 0
+  },
+  "notes": [
+    "Counts refer to OSM objects, not unique physical stops.",
+    "Probe includes heavy rail and track objects for inspection; only suitable bus/lrt/tram stopping points will be imported.",
+    "route_ref describes listed route references; ref is a stop/station identifier, not a route.",
+    "No live operational status, timetable, waits or travel times are known."
+  ],
+  "examples": [
+    {
+      "type": "node",
+      "id": 319526012,
+      "tags": {
+        "highway": "bus_stop"
+      }
+    },
+    {
+      "type": "node",
+      "id": 319526382,
+      "tags": {
+        "highway": "bus_stop",
+        "route_ref": "3;14"
+      }
+    },
+    {
+      "type": "node",
+      "id": 319526436,
+      "tags": {
+        "highway": "bus_stop",
+        "name": "ТД Меридиан",
+        "name:ru": "ТД Меридиан"
+      }
+    },
+    {
+      "type": "node",
+      "id": 319526508,
+      "tags": {
+        "highway": "bus_stop",
+        "name": "ТД Мередиан",
+        "name:ru": "ТД Мередиан"
+      }
+    },
+    {
+      "type": "node",
+      "id": 319526598,
+      "tags": {
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Еуразия",
+        "name:ru": "Евразия",
+        "public_transport": "platform"
+      }
+    },
+    {
+      "type": "node",
+      "id": 13081694249,
+      "tags": {
+        "addr:city": "Астана",
+        "light_rail": "yes",
+        "name": "Әуежай",
+        "name:en": "Airport",
+        "name:kk": "Әуежай",
+        "name:ru": "Аэропорт",
+        "network": "Tarlan Astana",
+        "operator": "City Transportation Systems",
+        "public_transport": "station",
+        "railway": "station",
+        "ref": "101",
+        "station": "light_rail",
+        "wikidata": "Q137551659"
+      },
+      "coordinates": {
+        "lat": 51.0279968,
+        "lon": 71.4587785
+      }
+    },
+    {
+      "type": "node",
+      "id": 13081694250,
+      "tags": {
+        "addr:city": "Астана",
+        "light_rail": "yes",
+        "name": "Атамекен",
+        "name:en": "Atameken",
+        "name:kk": "Атамекен",
+        "name:ru": "Атамекен",
+        "network": "Tarlan Astana",
+        "operator": "City Transportation Systems",
+        "public_transport": "station",
+        "railway": "station",
+        "ref": "102",
+        "station": "light_rail",
+        "wikidata": "Q137551660"
+      },
+      "coordinates": {
+        "lat": 51.0413113,
+        "lon": 71.4422022
+      }
+    },
+    {
+      "type": "node",
+      "id": 13081694251,
+      "tags": {
+        "addr:city": "Астана",
+        "light_rail": "yes",
+        "name": "Есіл",
+        "name:en": "Yesil",
+        "name:kk": "Есіл",
+        "name:ru": "Есиль",
+        "network": "Tarlan Astana",
+        "operator": "City Transportation Systems",
+        "public_transport": "station",
+        "railway": "station",
+        "ref": "103",
+        "station": "light_rail",
+        "wikidata": "Q137551661"
+      },
+      "coordinates": {
+        "lat": 51.0490296,
+        "lon": 71.4298587
+      }
+    }
+  ],
+  "import": {
+    "saved": 1365,
+    "skipped": 113,
+    "stop_types": {
+      "bus": 1293,
+      "lrt": 72
+    },
+    "named": 655,
+    "unnamed": 710,
+    "with_route_refs": 10,
+    "poi_count_unchanged": 601,
+    "cache_second_run_saved": 1365,
+    "table": "transit_stops"
+  }
+}

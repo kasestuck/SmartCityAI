@@ -136,6 +136,7 @@ def test_model_selects_order_but_response_facts_come_from_candidates(
         "website": None,
         "wikidata": None,
         "image_url": "/assets/icons/lc-landmark.svg",
+        "nearest_transit_stop": None,
     }
 
 
@@ -218,7 +219,7 @@ def test_empty_shortlist_skips_model(recommendation_request):
         "query_context": {
             "latitude": 51.1,
             "longitude": 71.4,
-            "categories": [],
+            "categories": ["cafe"],
             "duration_minutes": 90,
             "transport": "walking",
         },
@@ -261,13 +262,8 @@ def test_truncated_http_read_keeps_api_response_successful(
 
     assert response.status_code == 200
     cards = response.json()["recommendations"]
-    assert len(cards) == 3
-    assert {card["id"] for card in cards} <= {
-        "osm_node_1",
-        "osm_node_2",
-        "osm_node_3",
-        "osm_node_4",
-    }
+    assert [card["id"] for card in cards] == ["osm_node_1"]
+    assert {card["category"] for card in cards} == {"cafe"}
     assert all("не подтвержден" in card["reason"] for card in cards)
     assert "test-secret" not in caplog.text
     assert "private upstream response" not in caplog.text

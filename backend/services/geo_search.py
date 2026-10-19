@@ -8,8 +8,9 @@ from dataclasses import dataclass, fields, replace
 
 from backend.database.db import Database
 from backend.database.models import POI
-from backend.schemas import RecommendationRequest
+from backend.schemas import NearestTransitStop, RecommendationRequest
 from backend.services.poi_names import safe_display_name
+from backend.services.query_intent import applied_categories, normalize_text, preferred_categories
 
 EARTH_RADIUS_METERS = 6_371_008.8
 WALKING_METERS_PER_MINUTE = 75
@@ -23,15 +24,6 @@ VISIT_MINUTES = {
     "viewpoint": 10,
     "playground": 20,
 }
-INTENTS = (
-    (("коф", "кафе", "coffee", "cafe", "café"), {"cafe"}),
-    (("прогул", "гуля", "парк", "walk", "stroll", "park"), {"park", "attraction", "viewpoint"}),
-    (("ребен", "дет", "семь", "семей", "family", "kid", "child"), {"park", "playground", "museum"}),
-    (
-        ("турист", "достопримеч", "музе", "tourist", "sightseeing", "museum"),
-        {"museum", "attraction", "viewpoint"},
-    ),
-)
 
 
 @dataclass(frozen=True)
@@ -40,6 +32,7 @@ class Candidate:
     distance_meters: float
     estimated_duration_minutes: int
     score: float
+    nearest_transit_stop: NearestTransitStop | None = None
 
 
 def _validate_coordinates(latitude: float, longitude: float) -> None:
@@ -95,15 +88,7 @@ def _bounding_box(latitude: float, longitude: float, radius: float) -> tuple[str
 
 
 def _tokens(text: str) -> set[str]:
-    return set(re.findall(r"[^\W_]+", text.casefold().replace("ё", "е")))
-
-
-def _intent_categories(tokens: set[str]) -> set[str]:
-    categories = set()
-    for prefixes, matches in INTENTS:
-        if any(token.startswith(prefix) for token in tokens for prefix in prefixes):
-            categories.update(matches)
-    return categories
+    return set(re.findall(r"[^\W_]+", normalize_text(text)))
 
 
 def _tag_text(tags_json: str) -> str:
@@ -125,11 +110,8 @@ def search_poi(
     _validate_coordinates(request.latitude, request.longitude)
     if limit <= 0:
         return []
-    categories = (
-        sorted(set(request.categories) & VISIT_MINUTES.keys())
-        if request.categories
-        else (sorted(VISIT_MINUTES))
-    )
+    filters = applied_categories(request)
+    categories = filters if request.categories or filters else sorted(VISIT_MINUTES)
     if not categories:
         return []
     available_walking_minutes = request.duration_minutes - min(
@@ -148,7 +130,9 @@ def search_poi(
             parameters,
         ).fetchall()
     query_tokens = _tokens(request.query)
-    intent_categories = set(categories) if request.categories else _intent_categories(query_tokens)
+    intent_categories = (
+        set(filters) if request.categories or filters else preferred_categories(request.query)
+    )
     candidates = []
     fallback_candidates = []
     excluded = set(request.exclude_ids)

@@ -66,6 +66,17 @@
     return value === path ? path : null;
   }
 
+  function sanitizeTransitStop(value) {
+    if (!isObject(value) || !["bus", "lrt", "tram"].includes(value.stop_type)
+      || !isFiniteNumber(value.distance_meters) || value.distance_meters < 0 || value.distance_meters > 500) return null;
+    return {
+      name: typeof value.name === "string" && value.name.trim() ? value.name.trim() : null,
+      stop_type: value.stop_type,
+      distance_meters: value.distance_meters,
+      route_refs: typeof value.route_refs === "string" && value.route_refs.trim() ? value.route_refs.trim() : null,
+    };
+  }
+
   // Оставляем только элементы, которые можно безопасно показать.
   function sanitizeRecommendations(list) {
     if (!Array.isArray(list)) return null;
@@ -87,6 +98,7 @@
             ? Math.round(r.estimated_duration_minutes)
             : null,
         suggested_action: typeof r.suggested_action === "string" ? r.suggested_action : null,
+        nearest_transit_stop: sanitizeTransitStop(r.nearest_transit_stop),
         opening_hours: typeof r.opening_hours === "string" ? r.opening_hours : null,
         source: typeof r.source === "string" ? r.source : null,
         status_note: typeof r.status_note === "string" ? r.status_note : null,

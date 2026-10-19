@@ -17,8 +17,9 @@ from backend.schemas import (
     RecommendationsResponse,
 )
 from backend.services.gemini import GeminiClient, GeminiUnavailable
-from backend.services.geo_search import VISIT_MINUTES
 from backend.services.opening_hours import evaluate_opening_hours
+from backend.services.query_intent import applied_categories
+from backend.services.transit import valid_transit_text
 
 if TYPE_CHECKING:
     from backend.services.geo_search import Candidate
@@ -110,7 +111,7 @@ def build_recommendations(
     context = QueryContext(
         latitude=round(request.latitude, 3),
         longitude=round(request.longitude, 3),
-        categories=sorted(set(request.categories) & VISIT_MINUTES.keys()),
+        categories=applied_categories(request),
         duration_minutes=request.duration_minutes,
         transport=request.transport,
     )
@@ -143,6 +144,10 @@ def build_recommendations(
                     or identity in explanations
                     or not _valid_text(item["reason"])
                     or not _valid_text(item["suggested_action"])
+                    or not valid_transit_text(item["reason"], by_id[identity].nearest_transit_stop)
+                    or not valid_transit_text(
+                        item["suggested_action"], by_id[identity].nearest_transit_stop
+                    )
                 ):
                     continue
                 explanations[identity] = (
@@ -207,6 +212,7 @@ def build_recommendations(
                 phone=poi.phone,
                 website=poi.website,
                 wikidata=poi.wikidata,
+                nearest_transit_stop=candidate.nearest_transit_stop,
                 image_url=f"/assets/icons/{_CATEGORY_ICONS.get(poi.category, 'lc-map-pin.svg')}",
             )
         )

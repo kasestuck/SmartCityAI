@@ -21,3 +21,16 @@ class POI:
     phone: str | None = None
     website: str | None = None
     wikidata: str | None = None
+
+
+@dataclass(frozen=True)
+class TransitStop:
+    """A mapped stop, not proof of a currently operating public-transport service."""
+
+    id: str
+    name: str | None
+    latitude: float
+    longitude: float
+    stop_type: str
+    route_refs: str | None
+    collected_at: str

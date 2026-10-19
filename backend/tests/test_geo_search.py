@@ -265,11 +265,12 @@ def test_tag_metadata_keys_are_not_searchable_place_facts(database):
     assert results[0].score > results[1].score
 
 
-def test_scoring_uses_normalized_weights_and_keeps_unmatched_nearby_places(database):
+def test_explicit_intent_filters_categories_without_changing_score_weights(database):
     insert(database, 1, category="cafe", name="coffee")
     insert(database, 2, category="park", name="coffee")
     results = search(database, query="coffee")
-    assert [item.score for item in results] == pytest.approx([1.0, 0.5])
+    assert [item.poi.category for item in results] == ["cafe"]
+    assert [item.score for item in results] == pytest.approx([1.0])
     assert len(search(database, query="неизвестное слово")) == 2
     assert all(0 <= item.score <= 1 for item in results)
 

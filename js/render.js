@@ -149,6 +149,16 @@
     return el("p", { class: `a11y-badge a11y-badge--${level}` }, icon("lc-accessibility.svg", 16), text);
   }
 
+  function transitStopText(place) {
+    const stop = place.nearest_transit_stop;
+    if (!stop) return null;
+    const type = t(`transit_${stop.stop_type}`);
+    const name = isPresent(stop.name) ? placeName({ name: stop.name }) : type;
+    const distance = t("transit_distance", { d: formatDistance(stop.distance_meters) });
+    const routes = isPresent(stop.route_refs) ? ` · ${t("transit_routes", { routes: stop.route_refs })}` : "";
+    return `${name} (${type}) · ${distance}${routes}`;
+  }
+
   function generationText(place) {
     if (place.generated_by === "gemini") return t("generation_gemini");
     if (place.generated_by === "fallback_template") return t("generation_template");
@@ -193,6 +203,9 @@
       isPresent(place.reason) ? el("p", { class: "reason-box", text: place.reason }) : null,
       isPresent(place.suggested_action)
         ? el("p", { class: "place-card__text" }, el("b", { text: t("what_to_do") }), place.suggested_action)
+        : null,
+      transitStopText(place)
+        ? el("p", { class: "place-card__text" }, el("b", { text: t("transit_label") + ": " }), transitStopText(place))
         : null,
       isPresent(place.opening_hours)
         ? el("p", { class: "place-card__text" }, el("b", { text: t("hours_osm") }), place.opening_hours)
@@ -299,6 +312,7 @@
     accessibilityText,
     generationText,
     openingStatusText,
+    transitStopText,
     pluralPlaces,
     categoryInfo,
     metaLine,

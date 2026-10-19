@@ -8,6 +8,7 @@ from backend.schemas import RecommendationRequest, RecommendationsResponse
 from backend.services.gemini import GeminiClient
 from backend.services.geo_search import search_poi
 from backend.services.rag import build_recommendations
+from backend.services.transit import attach_nearest_stops
 
 router = APIRouter(prefix="/api", tags=["recommendations"])
 
@@ -23,6 +24,7 @@ def recommendations(
     generator: Annotated[GeminiClient, Depends(get_gemini)],
 ) -> RecommendationsResponse:
     candidates = search_poi(database, payload)
+    candidates = attach_nearest_stops(database, candidates)
     result = build_recommendations(payload, candidates, generator)
     if result.recommendations:
         # Probe retrieval only: the shortlist is capped and a short-budget page may

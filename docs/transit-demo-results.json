@@ -1,0 +1,133 @@
+{
+  "checked_at_utc": "2026-10-18T21:15:56.306323+00:00",
+  "endpoint": "POST /api/recommendations",
+  "transport": "real HTTP to temporary local Uvicorn",
+  "configured_gemini_key_present": true,
+  "request": {
+    "latitude": 51.1283,
+    "longitude": 71.4304,
+    "query": "Хочу кофе",
+    "duration_minutes": 60,
+    "transport": "walking",
+    "categories": [
+      "cafe"
+    ],
+    "language": "ru"
+  },
+  "http_status": 200,
+  "elapsed_seconds": 0.707,
+  "generated_by": [
+    "fallback_template"
+  ],
+  "response": {
+    "recommendations": [
+      {
+        "id": "osm_node_6408271985",
+        "name": "CrepeCafe",
+        "latitude": 51.1293821,
+        "longitude": 71.4285934,
+        "category": "cafe",
+        "description": null,
+        "reason": "Категория: кафе. Примерно 174 м по прямой; дорога к месту и посещение — около 24 мин. Соответствие остальным пожеланиям не подтверждено; часы и условия нужно уточнить.",
+        "distance_meters": 174.2741323192568,
+        "estimated_duration_minutes": 24,
+        "suggested_action": "Рассмотреть кафе для короткого отдыха; перед визитом уточнить часы и условия.",
+        "opening_hours": "Mo-Fr 08:00-00:00; Sa-Su 09:00-00:00",
+        "source": "OpenStreetMap",
+        "status_note": "По расписанию OpenStreetMap; фактические часы работы уточните перед визитом.",
+        "generated_by": "fallback_template",
+        "is_open_now": false,
+        "budget_warning": null,
+        "wheelchair": null,
+        "accessibility": null,
+        "phone": "+7 771 949 4949",
+        "website": "https://crepecafe.kz",
+        "wikidata": null,
+        "image_url": "/assets/icons/lc-coffee.svg",
+        "nearest_transit_stop": {
+          "name": "Национальная компания Казахстан Темир Жолы",
+          "stop_type": "bus",
+          "distance_meters": 239.6,
+          "route_refs": null
+        }
+      },
+      {
+        "id": "osm_node_10564988185",
+        "name": "Degirmen",
+        "latitude": 51.1285659,
+        "longitude": 71.4333254,
+        "category": "cafe",
+        "description": null,
+        "reason": "Категория: кафе. Примерно 206 м по прямой; дорога к месту и посещение — около 24 мин. Соответствие остальным пожеланиям не подтверждено; часы и условия нужно уточнить.",
+        "distance_meters": 206.27450888391553,
+        "estimated_duration_minutes": 24,
+        "suggested_action": "Рассмотреть кафе для короткого отдыха; перед визитом уточнить часы и условия.",
+        "opening_hours": "Mo-Su 08:00-00:00",
+        "source": "OpenStreetMap",
+        "status_note": "По расписанию OpenStreetMap; фактические часы работы уточните перед визитом.",
+        "generated_by": "fallback_template",
+        "is_open_now": false,
+        "budget_warning": null,
+        "wheelchair": null,
+        "accessibility": null,
+        "phone": "+7 708 377 7778",
+        "website": "http://degirmen.kz/",
+        "wikidata": null,
+        "image_url": "/assets/icons/lc-coffee.svg",
+        "nearest_transit_stop": {
+          "name": "Монумент Байтерек",
+          "stop_type": "bus",
+          "distance_meters": 179.1,
+          "route_refs": null
+        }
+      },
+      {
+        "id": "osm_node_14100100182",
+        "name": "Drinkit",
+        "latitude": 51.1302883,
+        "longitude": 71.4290105,
+        "category": "cafe",
+        "description": null,
+        "reason": "Категория: кафе. Примерно 241 м по прямой; дорога к месту и посещение — около 25 мин. Соответствие остальным пожеланиям не подтверждено; часы и условия нужно уточнить.",
+        "distance_meters": 241.41688317088844,
+        "estimated_duration_minutes": 25,
+        "suggested_action": "Рассмотреть кафе для короткого отдыха; перед визитом уточнить часы и условия.",
+        "opening_hours": null,
+        "source": "OpenStreetMap",
+        "status_note": "Часы работы не подтверждены",
+        "generated_by": "fallback_template",
+        "is_open_now": null,
+        "budget_warning": null,
+        "wheelchair": null,
+        "accessibility": null,
+        "phone": null,
+        "website": null,
+        "wikidata": null,
+        "image_url": "/assets/icons/lc-coffee.svg",
+        "nearest_transit_stop": {
+          "name": "Национальная компания Казахстан Темир Жолы",
+          "stop_type": "bus",
+          "distance_meters": 189.0,
+          "route_refs": null
+        }
+      }
+    ],
+    "query_context": {
+      "latitude": 51.128,
+      "longitude": 71.43,
+      "categories": [
+        "cafe"
+      ],
+      "duration_minutes": 60,
+      "transport": "walking"
+    },
+    "language": "ru",
+    "has_more": true
+  },
+  "followup_gemini_diagnostic": {
+    "upstream_http_status": 429,
+    "upstream_status": "RESOURCE_EXHAUSTED",
+    "result": "GeminiUnavailable"
+  },
+  "followup_gemini_diagnostic_note": "One additional bounded request with unchanged configured key/model, reporting only HTTP status; does not replace original API result."
+}
