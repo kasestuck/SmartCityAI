@@ -371,7 +371,6 @@ SmartCityAI/
 | Описание RAG | [02-rag.md](docs/submission/02-rag.md), [backend-design.md](docs/backend-design.md) |
 | Сценарии сдачи и ограничения | [03-test-scenarios.md](docs/submission/03-test-scenarios.md), [limitations.md](docs/limitations.md) |
 | Презентация на 5–7 минут | [План](docs/submission/05-presentation.md); готовность итоговых слайдов команда проверяет отдельно |
-| Видео демо | [Сценарий](docs/submission/06-demo-video.md); ссылка YouTube: **[ЗАПОЛНИТЬ]** |
 | Проверка языковых запросов | [query-intent-validation.md](docs/query-intent-validation.md) |
 | Остановки: сбор, API и frontend | [transit-results.md](docs/transit-results.md), [аудит данных](docs/transit-data-audit.json) |
 
