@@ -345,7 +345,7 @@ nearest = argmin Haversine(координаты POI, координаты ост
 - Координаты, запрос и история рекомендаций не сохраняются приложением. Язык интерфейса и кеш новостей сохраняются в браузере. Внешние карты, шрифты, виджеты и Gemini имеют собственные условия обработки сетевых данных.
 - Данные места и координаты — OSM; пояснение — Gemini или шаблон. Отдельный документ по этике сохранён: [Этические и privacy-заметки](docs/ethics-and-privacy-v2.md). Подробные технические ограничения — [limitations.md](docs/limitations.md).
 
-## Структура и материалы для сдачи
+## Структура
 
 ```text
 SmartCityAI/
@@ -363,17 +363,3 @@ SmartCityAI/
 └── docs/                       # Контракт, этика, ограничения и отчёты
 ```
 
-| Материал | Файл / состояние |
-| --- | --- |
-| Контракт API | [api-contract.md](docs/api-contract.md) |
-| Этика и privacy | [Актуальные заметки](docs/ethics-and-privacy-v2.md), [предыдущая версия и текст согласия](docs/ethics-and-privacy.md) |
-| Концепция продукта | [01-concept.md](docs/submission/01-concept.md) |
-| Описание RAG | [02-rag.md](docs/submission/02-rag.md), [backend-design.md](docs/backend-design.md) |
-| Сценарии сдачи и ограничения | [03-test-scenarios.md](docs/submission/03-test-scenarios.md), [limitations.md](docs/limitations.md) |
-| Презентация на 5–7 минут | [План](docs/submission/05-presentation.md); готовность итоговых слайдов команда проверяет отдельно |
-| Проверка языковых запросов | [query-intent-validation.md](docs/query-intent-validation.md) |
-| Остановки: сбор, API и frontend | [transit-results.md](docs/transit-results.md), [аудит данных](docs/transit-data-audit.json) |
-
-Исторические отчёты могут содержать прежние количества мест, тестов и состояния интеграции. Для текущего запуска используйте команды этого README и действующий API-контракт.
-
-Команда: Backend — **[ЗАПОЛНИТЬ]**; Frontend — **[ЗАПОЛНИТЬ]**. Данные: **© OpenStreetMap contributors**, [ODbL / атрибуция](https://www.openstreetmap.org/copyright).
